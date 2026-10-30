@@ -80,8 +80,8 @@ export class TelegramNotifier {
         console.error('Telegram sendMediaGroup failed:', albumJson);
       }
 
-      // Send the caption and 1-click action buttons
-      const textMessage = `*Post Caption & Hashtags:*\n\n${caption.slice(0, 800)}...\n\n_Review complete. Click an option below:_`;
+      // Send the caption and 1-click action buttons (safe plain text without markdown parsing errors)
+      const textMessage = `📝 Post Caption & Hashtags:\n\n${caption}\n\n👉 Review complete. Click an option below:`;
 
       // Save a local cloud-staged fallback if manifestKey provided
       const folderRef = manifestKey || path.basename(path.dirname(imagePaths[0]));
@@ -113,13 +113,16 @@ export class TelegramNotifier {
         body: JSON.stringify({
           chat_id: this.chatId,
           text: textMessage,
-          parse_mode: 'Markdown',
           reply_markup: keyboard
         })
       });
 
       const msgJson = await msgRes.json();
-      console.log('✅ Telegram preview notification dispatched successfully!');
+      if (!msgJson.ok) {
+        console.error('Telegram sendMessage button failed:', msgJson);
+      } else {
+        console.log('✅ Telegram preview notification dispatched successfully!');
+      }
       return msgJson;
     } catch (err) {
       console.error('Failed to dispatch Telegram message:', err.message);
