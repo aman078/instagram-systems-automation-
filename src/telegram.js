@@ -166,6 +166,14 @@ export class TelegramNotifier {
               if (onAction) {
                 await onAction(action, query);
               }
+            } else if (update.message && update.message.text) {
+              const text = update.message.text.trim();
+              console.log(`\n💬 Received text message from user: "${text}"`);
+              if (text === '/generate' || text.toLowerCase() === 'generate') {
+                if (onAction) {
+                  await onAction('generate_command', update.message);
+                }
+              }
             }
           }
         }

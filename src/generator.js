@@ -58,12 +58,11 @@ export async function generateCarouselData(customTopic = null) {
 
   const genAI = new GoogleGenerativeAI(apiKey);
   
-  // Resilient multi-model fallback chain to defeat temporary 503 high demand spikes
+  // Prioritize gemini-3.5-flash and gemini-3.8-flash for fast, sub-3s response times
   const candidateModels = [
-    'gemini-2.5-flash',
-    'gemini-flash-latest',
     'gemini-3.5-flash',
-    'gemini-3.8-flash'
+    'gemini-3.8-flash',
+    'gemini-flash-latest'
   ];
 
   const prompt = customTopic

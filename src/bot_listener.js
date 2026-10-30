@@ -75,7 +75,7 @@ async function main() {
         console.error('Publish error:', err);
         await telegram.sendMessage(`⚠️ Failed to publish to Instagram: ${err.message}`);
       }
-    } else if (action === 'regenerate') {
+    } else if (action === 'regenerate' || action === 'generate_command') {
       await telegram.sendMessage('🔄 Cooking a fresh topic with Gemini and rendering slides...');
 
       try {
