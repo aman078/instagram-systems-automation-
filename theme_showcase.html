@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Theme Showcase</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap');
+    
+    body {
+      background: #000;
+      color: #fff;
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      padding: 40px;
+      margin: 0;
+    }
+    h1 { text-align: center; font-size: 32px; margin-bottom: 10px; }
+    p.sub { text-align: center; color: #888; font-size: 16px; margin-bottom: 40px; }
+    
+    .themes-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 32px;
+      max-width: 1400px;
+      margin: 0 auto;
+    }
+    
+    .theme-card {
+      border-radius: 20px;
+      padding: 36px 30px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      height: 580px;
+      position: relative;
+      overflow: hidden;
+      box-shadow: 0 20px 50px rgba(0,0,0,0.6);
+      transition: transform 0.2s ease;
+    }
+    .theme-card:hover { transform: translateY(-4px); }
+    
+    /* Progress Segments */
+    .story-bars {
+      display: flex;
+      gap: 6px;
+      margin-bottom: 24px;
+    }
+    .bar {
+      height: 3px;
+      flex: 1;
+      border-radius: 2px;
+      background: rgba(255,255,255,0.15);
+    }
+    
+    .tag {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      margin-bottom: 12px;
+    }
+    
+    .card-title {
+      font-size: 28px;
+      font-weight: 800;
+      line-height: 1.2;
+      margin-bottom: 14px;
+      letter-spacing: -0.02em;
+    }
+    
+    .card-desc {
+      font-size: 15px;
+      line-height: 1.5;
+      margin-bottom: 24px;
+      opacity: 0.8;
+    }
+    
+    .box {
+      border-radius: 14px;
+      padding: 20px;
+      margin-bottom: auto;
+    }
+    .box-point {
+      font-size: 14px;
+      line-height: 1.5;
+      margin-bottom: 12px;
+      display: flex;
+      gap: 10px;
+      align-items: flex-start;
+    }
+    .box-point strong { font-weight: 700; }
+    
+    /* Seamless Bleed Line */
+    .bleed-line-container {
+      position: relative;
+      height: 24px;
+      margin: 20px 0;
+      display: flex;
+      align-items: center;
+    }
+    .bleed-line {
+      height: 2px;
+      width: 100%;
+      position: relative;
+    }
+    .bleed-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      position: absolute;
+      top: -4px;
+    }
+    
+    .card-footer {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding-top: 16px;
+      border-top: 1px solid rgba(255,255,255,0.08);
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 13px;
+    }
+
+    /* THEME 1: Obsidian Emerald */
+    .theme-emerald {
+      background: radial-gradient(circle at 100% 0%, rgba(0, 245, 160, 0.08) 0%, #06090E 70%);
+      border: 1px solid rgba(0, 245, 160, 0.2);
+    }
+    .theme-emerald .bar.active { background: #00F5A0; box-shadow: 0 0 8px #00F5A0; }
+    .theme-emerald .tag { color: #00F5A0; }
+    .theme-emerald .box { background: rgba(0, 245, 160, 0.04); border: 1px solid rgba(0, 245, 160, 0.15); }
+    .theme-emerald .bleed-line { background: linear-gradient(90deg, transparent, #00F5A0 60%, #00F5A0); }
+    .theme-emerald .bleed-dot { background: #00F5A0; right: 0; box-shadow: 0 0 10px #00F5A0; }
+    .theme-emerald .accent-text { color: #00F5A0; }
+
+    /* THEME 2: Swiss Solar Amber */
+    .theme-amber {
+      background: radial-gradient(circle at 100% 0%, rgba(255, 107, 0, 0.1) 0%, #0D0E12 70%);
+      border: 1px solid rgba(255, 107, 0, 0.25);
+    }
+    .theme-amber .bar.active { background: #FF6B00; box-shadow: 0 0 8px #FF6B00; }
+    .theme-amber .tag { color: #FF6B00; }
+    .theme-amber .box { background: rgba(255, 107, 0, 0.05); border: 1px solid rgba(255, 107, 0, 0.2); }
+    .theme-amber .bleed-line { background: linear-gradient(90deg, transparent, #FF6B00 60%, #FF6B00); }
+    .theme-amber .bleed-dot { background: #FF6B00; right: 0; box-shadow: 0 0 10px #FF6B00; }
+    .theme-amber .accent-text { color: #FF6B00; }
+
+    /* THEME 3: Crimson Void */
+    .theme-crimson {
+      background: radial-gradient(circle at 100% 0%, rgba(255, 77, 109, 0.12) 0%, #08080A 70%);
+      border: 1px solid rgba(255, 77, 109, 0.25);
+    }
+    .theme-crimson .bar.active { background: #FF4D6D; box-shadow: 0 0 8px #FF4D6D; }
+    .theme-crimson .tag { color: #FF4D6D; }
+    .theme-crimson .box { background: rgba(255, 77, 109, 0.05); border: 1px solid rgba(255, 77, 109, 0.2); }
+    .theme-crimson .bleed-line { background: linear-gradient(90deg, transparent, #FF4D6D 60%, #FF4D6D); }
+    .theme-crimson .bleed-dot { background: #FF4D6D; right: 0; box-shadow: 0 0 10px #FF4D6D; }
+    .theme-crimson .accent-text { color: #FF4D6D; }
+  </style>
+</head>
+<body>
+  <h1>Interactive Carousel Design Themes</h1>
+  <p class="sub">Choose which visual personality & seamless continuity line you want for @systems.thinking.lab</p>
+
+  <div class="themes-grid">
+    <!-- THEME 1 -->
+    <div class="theme-card theme-emerald">
+      <div>
+        <div class="story-bars">
+          <div class="bar active"></div>
+          <div class="bar"></div>
+          <div class="bar"></div>
+          <div class="bar"></div>
+          <div class="bar"></div>
+        </div>
+        <div class="tag">01 // OPTION A: OBSIDIAN EMERALD</div>
+        <div class="card-title">Why Dead Snakes Created An Army Of Cobras</div>
+        <div class="card-desc">Deep cosmic navy with vibrant electric mint accents. High-tech, sharp, modern.</div>
+        
+        <div class="box">
+          <div class="box-point">
+            <span>●</span>
+            <div><strong>The Trap:</strong> People started breeding cobras in basements for easy cash.</div>
+          </div>
+          <div class="box-point">
+            <span>●</span>
+            <div><strong>The Collapse:</strong> When bounties stopped, breeders let them all loose.</div>
+          </div>
+        </div>
+
+        <div class="bleed-line-container">
+          <div class="bleed-line"></div>
+          <div class="bleed-dot"></div>
+        </div>
+      </div>
+
+      <div class="card-footer">
+        <span>SWIPE TO NEXT SLIDE</span>
+        <span class="accent-text">CONTINUE ➔</span>
+      </div>
+    </div>
+
+    <!-- THEME 2 -->
+    <div class="theme-card theme-amber">
+      <div>
+        <div class="story-bars">
+          <div class="bar active"></div>
+          <div class="bar"></div>
+          <div class="bar"></div>
+          <div class="bar"></div>
+          <div class="bar"></div>
+        </div>
+        <div class="tag">02 // OPTION B: SWISS SOLAR AMBER</div>
+        <div class="card-title">Why Dead Snakes Created An Army Of Cobras</div>
+        <div class="card-desc">Matte industrial charcoal with warm solar amber. Feels like an executive blueprint.</div>
+        
+        <div class="box">
+          <div class="box-point">
+            <span>●</span>
+            <div><strong>The Trap:</strong> People started breeding cobras in basements for easy cash.</div>
+          </div>
+          <div class="box-point">
+            <span>●</span>
+            <div><strong>The Collapse:</strong> When bounties stopped, breeders let them all loose.</div>
+          </div>
+        </div>
+
+        <div class="bleed-line-container">
+          <div class="bleed-line"></div>
+          <div class="bleed-dot"></div>
+        </div>
+      </div>
+
+      <div class="card-footer">
+        <span>SWIPE TO NEXT SLIDE</span>
+        <span class="accent-text">CONTINUE ➔</span>
+      </div>
+    </div>
+
+    <!-- THEME 3 -->
+    <div class="theme-card theme-crimson">
+      <div>
+        <div class="story-bars">
+          <div class="bar active"></div>
+          <div class="bar"></div>
+          <div class="bar"></div>
+          <div class="bar"></div>
+          <div class="bar"></div>
+        </div>
+        <div class="tag">03 // OPTION C: CRIMSON VOID</div>
+        <div class="card-title">Why Dead Snakes Created An Army Of Cobras</div>
+        <div class="card-desc">Pure OLED black with striking neon coral. High-tension, dramatic, intense hook.</div>
+        
+        <div class="box">
+          <div class="box-point">
+            <span>●</span>
+            <div><strong>The Trap:</strong> People started breeding cobras in basements for easy cash.</div>
+          </div>
+          <div class="box-point">
+            <span>●</span>
+            <div><strong>The Collapse:</strong> When bounties stopped, breeders let them all loose.</div>
+          </div>
+        </div>
+
+        <div class="bleed-line-container">
+          <div class="bleed-line"></div>
+          <div class="bleed-dot"></div>
+        </div>
+      </div>
+
+      <div class="card-footer">
+        <span>SWIPE TO NEXT SLIDE</span>
+        <span class="accent-text">CONTINUE ➔</span>
+      </div>
+    </div>
+  </div>
+</body>
+</html>

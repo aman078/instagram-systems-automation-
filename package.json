@@ -1,0 +1,18 @@
+{
+  "name": "instagram-systems-automation",
+  "version": "1.0.0",
+  "description": "Zero-cost autonomous Instagram engine for Systems Thinking educational carousels",
+  "main": "index.js",
+  "type": "module",
+  "scripts": {
+    "generate": "node src/generator.js",
+    "render": "node src/renderer.js",
+    "run-pipeline": "node src/pipeline.js",
+    "bot": "node src/bot_listener.js"
+  },
+  "dependencies": {
+    "@google/generative-ai": "^0.24.0",
+    "dotenv": "^16.4.7",
+    "puppeteer": "^24.4.0"
+  }
+}

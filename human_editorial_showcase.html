@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Human Editorial Showcase</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;0,6..72,600;1,6..72,400&family=Plus+Jakarta+Sans:wght@400;500;600;700&family=Caveat:wght@600;700&family=JetBrains+Mono:wght@500&display=swap');
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background: #18191B;
+      color: #111;
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      padding: 50px 30px;
+    }
+
+    h1 {
+      text-align: center;
+      color: #F4EFEA;
+      font-family: 'Newsreader', serif;
+      font-size: 38px;
+      font-weight: 500;
+      margin-bottom: 10px;
+    }
+    p.subtitle {
+      text-align: center;
+      color: #9E9B97;
+      font-size: 16px;
+      margin-bottom: 50px;
+    }
+
+    .showcase-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 40px;
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+
+    /* Common Human Card Style */
+    .human-card {
+      border-radius: 20px;
+      padding: 44px 40px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      height: 640px;
+      position: relative;
+      box-shadow: 0 25px 60px rgba(0,0,0,0.3);
+      overflow: hidden;
+    }
+
+    /* Top Progress Note */
+    .top-meta {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px dashed rgba(0,0,0,0.15);
+      padding-bottom: 16px;
+      font-size: 13px;
+      font-weight: 600;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+    }
+
+    /* Editorial Headline */
+    .editorial-title {
+      font-family: 'Newsreader', serif;
+      font-size: 36px;
+      line-height: 1.18;
+      font-weight: 500;
+      margin: 22px 0 12px 0;
+      letter-spacing: -0.01em;
+    }
+
+    .editorial-subtitle {
+      font-size: 17px;
+      line-height: 1.5;
+      font-weight: 400;
+      opacity: 0.75;
+      margin-bottom: 28px;
+    }
+
+    /* Handcrafted Note / Sketch Card */
+    .sketch-box {
+      border-radius: 14px;
+      padding: 24px;
+      position: relative;
+      margin-bottom: auto;
+    }
+
+    .sketch-point {
+      display: flex;
+      gap: 14px;
+      align-items: flex-start;
+      margin-bottom: 16px;
+      font-size: 16px;
+      line-height: 1.5;
+    }
+    .sketch-point:last-child { margin-bottom: 0; }
+
+    .bullet-num {
+      font-family: 'Newsreader', serif;
+      font-style: italic;
+      font-size: 18px;
+      font-weight: 600;
+      opacity: 0.7;
+    }
+
+    /* Handwritten Margin Note */
+    .handwritten-note {
+      font-family: 'Caveat', cursive;
+      font-size: 22px;
+      line-height: 1.2;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-top: 18px;
+    }
+
+    /* Continuity Wire / Thread */
+    .thread-container {
+      position: relative;
+      height: 24px;
+      display: flex;
+      align-items: center;
+      margin: 16px 0;
+    }
+    .thread-line {
+      width: 100%;
+      height: 2px;
+      position: relative;
+    }
+    .thread-node {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      position: absolute;
+      top: -4px;
+    }
+
+    /* Card Footer */
+    .card-footer {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-top: 1px dashed rgba(0,0,0,0.15);
+      padding-top: 16px;
+      font-size: 13px;
+      font-weight: 600;
+    }
+
+    /* OPTION 1: Warm Parchment (Book & Essay feel) */
+    .theme-parchment {
+      background: #F6F3ED;
+      color: #242220;
+    }
+    .theme-parchment .top-meta { color: #7A756F; border-color: rgba(60, 50, 40, 0.15); }
+    .theme-parchment .editorial-title { color: #1C1917; }
+    .theme-parchment .sketch-box {
+      background: #EDE8DE;
+      border: 1px solid rgba(60, 50, 40, 0.12);
+    }
+    .theme-parchment .handwritten-note { color: #C2410C; } /* Warm terracotta */
+    .theme-parchment .thread-line {
+      background: repeating-linear-gradient(90deg, #B5AEA4, #B5AEA4 6px, transparent 6px, transparent 12px);
+    }
+    .theme-parchment .thread-node {
+      background: #C2410C;
+      right: 0;
+    }
+    .theme-parchment .card-footer { color: #7A756F; border-color: rgba(60, 50, 40, 0.15); }
+    .theme-parchment .next-arrow { color: #C2410C; font-weight: 700; }
+
+    /* OPTION 2: Warm Editorial Slate (Dark book / Monocle / Literary magazine) */
+    .theme-warm-slate {
+      background: #1E2024;
+      color: #E6E4DF;
+    }
+    .theme-warm-slate .top-meta { color: #9A9DA3; border-color: rgba(255, 255, 255, 0.1); }
+    .theme-warm-slate .editorial-title { color: #FAF8F5; }
+    .theme-warm-slate .sketch-box {
+      background: rgba(255, 255, 255, 0.04);
+      border: 1px solid rgba(255, 255, 255, 0.09);
+    }
+    .theme-warm-slate .handwritten-note { color: #F59E0B; } /* Warm Amber note */
+    .theme-warm-slate .thread-line {
+      background: repeating-linear-gradient(90deg, #4A4E57, #4A4E57 6px, transparent 6px, transparent 12px);
+    }
+    .theme-warm-slate .thread-node {
+      background: #F59E0B;
+      right: 0;
+    }
+    .theme-warm-slate .card-footer { color: #9A9DA3; border-color: rgba(255, 255, 255, 0.1); }
+    .theme-warm-slate .next-arrow { color: #F59E0B; font-weight: 700; }
+  </style>
+</head>
+<body>
+  <h1>Human Editorial & Systems Thinking</h1>
+  <p class="subtitle">Replacing cold AI terminals with warm, timeless editorial design made for curious minds.</p>
+
+  <div class="showcase-grid">
+    <!-- OPTION 1 -->
+    <div class="human-card theme-parchment">
+      <div>
+        <div class="top-meta">
+          <span>Systems Thinking // Chapter 01</span>
+          <span>1 of 5</span>
+        </div>
+
+        <h2 class="editorial-title">Why Paying For Dead Snakes Made More Snakes</h2>
+        <p class="editorial-subtitle">The true story of an honest rule that backfired completely.</p>
+
+        <div class="sketch-box">
+          <div class="sketch-point">
+            <span class="bullet-num">1.</span>
+            <div><strong>The Simple Plan:</strong> The city offered a cash reward for every dead cobra brought in.</div>
+          </div>
+          <div class="sketch-point">
+            <span class="bullet-num">2.</span>
+            <div><strong>The Human Twist:</strong> People stopped hunting wild cobras and started breeding them at home.</div>
+          </div>
+          <div class="handwritten-note">
+            ✏️ "When you reward a number, people game the number..."
+          </div>
+        </div>
+
+        <div class="thread-container">
+          <div class="thread-line"></div>
+          <div class="thread-node"></div>
+        </div>
+      </div>
+
+      <div class="card-footer">
+        <span>@systems.thinking.lab</span>
+        <span class="next-arrow">Turn the page ➔</span>
+      </div>
+    </div>
+
+    <!-- OPTION 2 -->
+    <div class="human-card theme-warm-slate">
+      <div>
+        <div class="top-meta">
+          <span>Systems Thinking // Chapter 01</span>
+          <span>1 of 5</span>
+        </div>
+
+        <h2 class="editorial-title">Why Paying For Dead Snakes Made More Snakes</h2>
+        <p class="editorial-subtitle">The true story of an honest rule that backfired completely.</p>
+
+        <div class="sketch-box">
+          <div class="sketch-point">
+            <span class="bullet-num">1.</span>
+            <div><strong>The Simple Plan:</strong> The city offered a cash reward for every dead cobra brought in.</div>
+          </div>
+          <div class="sketch-point">
+            <span class="bullet-num">2.</span>
+            <div><strong>The Human Twist:</strong> People stopped hunting wild cobras and started breeding them at home.</div>
+          </div>
+          <div class="handwritten-note">
+            ✏️ "When you reward a number, people game the number..."
+          </div>
+        </div>
+
+        <div class="thread-container">
+          <div class="thread-line"></div>
+          <div class="thread-node"></div>
+        </div>
+      </div>
+
+      <div class="card-footer">
+        <span>@systems.thinking.lab</span>
+        <span class="next-arrow">Turn the page ➔</span>
+      </div>
+    </div>
+  </div>
+</body>
+</html>
