@@ -1,6 +1,12 @@
+import fs from 'fs';
+import path from 'path';
+import { fileURLToPath } from 'url';
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import dotenv from 'dotenv';
 dotenv.config();
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 const SYSTEM_PROMPT = `
 You are an elite communicator who explains deep Systems Thinking and everyday paradoxes in crystal-clear, plain English.
@@ -65,10 +71,38 @@ export async function generateCarouselData(customTopic = null) {
     'gemini-flash-latest'
   ];
 
-  const prompt = customTopic
-    ? `Create a 5-slide Systems Thinking breakdown specifically for: "${customTopic}".`
-    : `Select a fascinating, counterintuitive Systems Thinking topic (e.g., Braess's Paradox, The Cobra Effect, Ant Colony Optimization algorithms, The Bullwhip Effect in supply chains, Forest Fire Percolation thresholds, or Tragedy of the Commons) and create the complete 5-slide breakdown.`;
+  // Load master topics catalog & history to guarantee no repeats
+  const topicsPath = path.join(__dirname, 'topics.json');
+  const historyPath = path.join(__dirname, '..', 'history.json');
+  
+  let allTopics = [];
+  try { allTopics = JSON.parse(fs.readFileSync(topicsPath, 'utf8')); } catch(e) {}
+  
+  let history = [];
+  try { history = JSON.parse(fs.readFileSync(historyPath, 'utf8')); } catch(e) {}
 
+  let chosenTopic = customTopic;
+  if (!chosenTopic) {
+    // Pick an unposted topic from our curated list
+    const unposted = allTopics.filter(t => !history.some(h => t.toLowerCase().includes(h.toLowerCase().slice(0, 10))));
+    if (unposted.length > 0) {
+      // Pick random unposted topic
+      chosenTopic = unposted[Math.floor(Math.random() * unposted.length)];
+    } else {
+      // If all posted, pick any random one or prompt Gemini to discover a brand new one
+      const sample = allTopics[Math.floor(Math.random() * allTopics.length)];
+      chosenTopic = sample;
+    }
+  }
+
+  // Update history so it never generates the exact same topic back-to-back
+  if (!history.includes(chosenTopic)) {
+    history.push(chosenTopic);
+    try { fs.writeFileSync(historyPath, JSON.stringify(history, null, 2), 'utf8'); } catch(e) {}
+  }
+
+  const prompt = `Create a 5-slide Systems Thinking breakdown specifically for: "${chosenTopic}".`;
+  console.log(`\n🎯 Selected New Topic: "${chosenTopic}"`);
   console.log(`Querying Gemini with prompt: "${prompt}"...`);
 
   let lastError = null;
