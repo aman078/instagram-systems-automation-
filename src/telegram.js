@@ -40,7 +40,7 @@ export class TelegramNotifier {
   /**
    * Send the 5 carousel slides as a media album to your phone
    */
-  async sendCarouselPreview(imagePaths, caption, topic) {
+  async sendCarouselPreview(imagePaths, caption, topic, manifestKey = null, cdnUrls = null) {
     if (!this.isConfigured()) {
       console.log('⚠️ Telegram bot not configured in .env. Skipping Telegram push.');
       return null;
@@ -62,7 +62,7 @@ export class TelegramNotifier {
         media.push({
           type: 'photo',
           media: `attach://${fieldName}`,
-          caption: i === 0 ? `📐 *NEW CAROUSEL DRAFT: ${topic}*` : undefined,
+          caption: i === 0 ? `📐 *NEW DRAFT: ${topic}*` : undefined,
           parse_mode: 'Markdown'
         });
       }
@@ -81,12 +81,24 @@ export class TelegramNotifier {
       }
 
       // Send the caption and 1-click action buttons
-      const textMessage = `*Post Caption & Hashtags:*\n\n${caption.slice(0, 900)}...\n\n_Review complete. Click an option below:_`;
+      const textMessage = `*Post Caption & Hashtags:*\n\n${caption.slice(0, 800)}...\n\n_Review complete. Click an option below:_`;
+
+      // Save a local cloud-staged fallback if manifestKey provided
+      const folderRef = manifestKey || path.basename(path.dirname(imagePaths[0]));
+      if (cdnUrls && cdnUrls.length) {
+        const cloudStagingPath = path.join(__dirname, '..', 'output', 'cloud_staged.json');
+        let db = {};
+        if (fs.existsSync(cloudStagingPath)) {
+          try { db = JSON.parse(fs.readFileSync(cloudStagingPath, 'utf8')); } catch(e) {}
+        }
+        db[folderRef] = { cdnUrls, caption, topic };
+        fs.writeFileSync(cloudStagingPath, JSON.stringify(db, null, 2), 'utf8');
+      }
 
       const keyboard = {
         inline_keyboard: [
           [
-            { text: '✅ Approve & Publish', callback_data: `approve_${path.basename(path.dirname(imagePaths[0]))}` },
+            { text: '✅ Approve & Publish', callback_data: `approve_${folderRef}` },
             { text: '🔄 Regenerate', callback_data: 'regenerate' }
           ],
           [

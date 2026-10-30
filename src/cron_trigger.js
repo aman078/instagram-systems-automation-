@@ -5,6 +5,7 @@ import dotenv from 'dotenv';
 import { generateCarouselData } from './generator.js';
 import { renderCarousel } from './renderer.js';
 import { TelegramNotifier } from './telegram.js';
+import { uploadToPublicCDN } from './publisher.js';
 
 dotenv.config();
 
@@ -33,9 +34,29 @@ async function runScheduledPost() {
     console.log(`🎨 Rendering slides to: ${outputDir}`);
     const files = await renderCarousel(carouselData, outputDir);
 
-    // 3. Dispatch directly to Aman's phone with live 1-click approval buttons
+    // 3. Stage slides immediately to public CDN so approval works from anywhere (Cloud or Local)
+    console.log('☁️ Staging slides to CDN...');
+    const cdnUrls = [];
+    for (const f of files) {
+      const url = await uploadToPublicCDN(f);
+      cdnUrls.push(url);
+    }
+
+    // Save a manifest with CDN urls and caption
+    const manifest = {
+      topic: carouselData.topic,
+      caption: carouselData.caption,
+      cdnUrls: cdnUrls
+    };
+
+    // Encode a short key for callback
+    const manifestKey = `${timestamp}_${safeTitle}`;
+    // If running in cloud, save to GitHub repository or public Gist / temporary cache
+    fs.writeFileSync(path.join(outputDir, 'manifest.json'), JSON.stringify(manifest, null, 2), 'utf8');
+
+    // 4. Dispatch directly to Aman's phone with live 1-click approval buttons
     console.log('📱 Dispatching review draft to Telegram...');
-    await telegram.sendCarouselPreview(files, carouselData.caption, carouselData.topic);
+    await telegram.sendCarouselPreview(files, carouselData.caption, carouselData.topic, manifestKey, cdnUrls);
     console.log('✅ Scheduled draft dispatched to phone successfully!\n');
   } catch (err) {
     console.error('❌ Scheduler error:', err.message);

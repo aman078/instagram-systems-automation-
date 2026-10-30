@@ -4,10 +4,10 @@ import dotenv from 'dotenv';
 dotenv.config();
 
 /**
- * Upload local slide to high-speed verified CDN (freeimage.host / iili.io)
+ * Upload local slide to verified CDN (freeimage.host / iili.io)
  * Fully compliant with Meta Graph API image requirements.
  */
-async function uploadToPublicCDN(filePath) {
+export async function uploadToPublicCDN(filePath) {
   const form = new FormData();
   const fileBytes = fs.readFileSync(filePath);
   form.append('image', fileBytes.toString('base64'));
@@ -63,25 +63,14 @@ export class InstagramPublisher {
   }
 
   /**
-   * Publish a complete multi-slide carousel
-   * @param {string[]} localImagePaths - Array of local slide PNG paths
-   * @param {string} caption - Post caption
+   * Publish a complete multi-slide carousel using already staged CDN urls
    */
-  async publishCarousel(localImagePaths, caption) {
+  async publishFromUrls(publicUrls, caption) {
     if (!this.isConfigured()) {
-      console.log('⚠️ Meta Graph API credentials not configured in .env. Skipping actual publish.');
-      return { simulated: true, message: 'Ready to publish once Meta tokens are supplied.' };
+      return { simulated: true };
     }
 
-    console.log(`🚀 Staging ${localImagePaths.length} slides to Meta-compatible CDN...`);
-    const publicUrls = [];
-    for (let i = 0; i < localImagePaths.length; i++) {
-      const publicUrl = await uploadToPublicCDN(localImagePaths[i]);
-      publicUrls.push(publicUrl);
-      console.log(`   Slide ${i + 1} staged: ${publicUrl}`);
-    }
-
-    console.log(`📦 Creating Meta carousel item containers...`);
+    console.log(`📦 Creating Meta carousel item containers for ${publicUrls.length} slides...`);
     const itemIds = [];
     for (const url of publicUrls) {
       const itemId = await this.createItemContainer(url);
@@ -89,7 +78,6 @@ export class InstagramPublisher {
       console.log(`   Container created: ${itemId}`);
     }
 
-    // Create the master carousel container
     const carouselUrl = `${this.baseUrl}/${this.accountId}/media`;
     const carouselParams = new URLSearchParams({
       media_type: 'CAROUSEL',
@@ -111,7 +99,6 @@ export class InstagramPublisher {
     // Wait 3 seconds for Meta media processing
     await new Promise(r => setTimeout(r, 3000));
 
-    // Publish the carousel container
     const publishUrl = `${this.baseUrl}/${this.accountId}/media_publish`;
     const publishParams = new URLSearchParams({
       creation_id: creationId,
@@ -127,5 +114,16 @@ export class InstagramPublisher {
 
     console.log(`🎉 POST PUBLISHED LIVE ON INSTAGRAM! Post ID: ${publishData.id}`);
     return { success: true, postId: publishData.id };
+  }
+
+  /**
+   * Publish a complete multi-slide carousel from local paths
+   */
+  async publishCarousel(localImagePaths, caption) {
+    const publicUrls = [];
+    for (const p of localImagePaths) {
+      publicUrls.push(await uploadToPublicCDN(p));
+    }
+    return this.publishFromUrls(publicUrls, caption);
   }
 }

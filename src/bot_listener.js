@@ -36,21 +36,36 @@ async function main() {
       const outputDir = path.join(__dirname, '..', 'output', folderName);
       const captionPath = path.join(outputDir, 'caption.txt');
 
-      if (!fs.existsSync(outputDir)) {
+      // Check if folder exists locally OR in cloud-staged registry
+      const cloudStagingPath = path.join(__dirname, '..', 'output', 'cloud_staged.json');
+      let cloudRecord = null;
+      if (fs.existsSync(cloudStagingPath)) {
+        try {
+          const db = JSON.parse(fs.readFileSync(cloudStagingPath, 'utf8'));
+          cloudRecord = db[folderName];
+        } catch(e) {}
+      }
+
+      if (!fs.existsSync(outputDir) && !cloudRecord) {
         await telegram.sendMessage(`❌ Could not locate folder: ${folderName}`);
         return;
       }
 
-      const caption = fs.readFileSync(captionPath, 'utf8');
-      const files = fs.readdirSync(outputDir)
-        .filter(f => f.startsWith('slide_') && f.endsWith('.png'))
-        .sort()
-        .map(f => path.join(outputDir, f));
-
       await telegram.sendMessage('🚀 Publishing approved carousel to Instagram...');
 
       try {
-        const result = await publisher.publishCarousel(files, caption);
+        let result;
+        if (cloudRecord && cloudRecord.cdnUrls && cloudRecord.cdnUrls.length) {
+          result = await publisher.publishFromUrls(cloudRecord.cdnUrls, cloudRecord.caption);
+        } else {
+          const caption = fs.readFileSync(captionPath, 'utf8');
+          const files = fs.readdirSync(outputDir)
+            .filter(f => f.startsWith('slide_') && f.endsWith('.png'))
+            .sort()
+            .map(f => path.join(outputDir, f));
+          result = await publisher.publishCarousel(files, caption);
+        }
+
         if (result.success) {
           await telegram.sendMessage(`🎉 Post is LIVE on Instagram!\n\nPost ID: ${result.postId}`);
         } else if (result.simulated) {
