@@ -57,32 +57,54 @@ export async function generateCarouselData(customTopic = null) {
   }
 
   const genAI = new GoogleGenerativeAI(apiKey);
-  // Using gemini-3.5-flash for lightning-fast (2s) free generation
-  const model = genAI.getGenerativeModel({
-    model: 'gemini-3.5-flash',
-    generationConfig: {
-      responseMimeType: 'application/json',
-      temperature: 0.7
-    }
-  });
+  
+  // Resilient multi-model fallback chain to defeat temporary 503 high demand spikes
+  const candidateModels = [
+    'gemini-2.5-flash',
+    'gemini-flash-latest',
+    'gemini-3.5-flash',
+    'gemini-3.8-flash'
+  ];
 
   const prompt = customTopic
     ? `Create a 5-slide Systems Thinking breakdown specifically for: "${customTopic}".`
     : `Select a fascinating, counterintuitive Systems Thinking topic (e.g., Braess's Paradox, The Cobra Effect, Ant Colony Optimization algorithms, The Bullwhip Effect in supply chains, Forest Fire Percolation thresholds, or Tragedy of the Commons) and create the complete 5-slide breakdown.`;
 
   console.log(`Querying Gemini with prompt: "${prompt}"...`);
-  const response = await model.generateContent([
-    { text: SYSTEM_PROMPT },
-    { text: prompt }
-  ]);
 
-  const responseText = response.response.text();
-  const carouselData = JSON.parse(responseText);
+  let lastError = null;
+  for (const modelName of candidateModels) {
+    try {
+      console.log(`Trying model: ${modelName}...`);
+      const model = genAI.getGenerativeModel({
+        model: modelName,
+        generationConfig: {
+          responseMimeType: 'application/json',
+          temperature: 0.7
+        }
+      });
 
-  // Set default handle if not present
-  if (!carouselData.handle) {
-    carouselData.handle = process.env.INSTAGRAM_HANDLE || '@systems.thinking.lab';
+      const response = await model.generateContent([
+        { text: SYSTEM_PROMPT },
+        { text: prompt }
+      ]);
+
+      const responseText = response.response.text();
+      const carouselData = JSON.parse(responseText);
+
+      if (!carouselData.handle) {
+        carouselData.handle = process.env.INSTAGRAM_HANDLE || '@systems.thinking.lab';
+      }
+
+      console.log(`✅ Generation succeeded with ${modelName}!`);
+      return carouselData;
+    } catch (err) {
+      console.log(`⚠️ Model ${modelName} returned error: ${err.message}. Trying next fallback...`);
+      lastError = err;
+      // brief pause before next attempt
+      await new Promise(r => setTimeout(r, 1000));
+    }
   }
 
-  return carouselData;
+  throw lastError;
 }
