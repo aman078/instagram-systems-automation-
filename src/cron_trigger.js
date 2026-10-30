@@ -57,6 +57,30 @@ async function runScheduledPost() {
     // 4. Dispatch directly to Aman's phone with live 1-click approval buttons
     console.log('📱 Dispatching review draft to Telegram...');
     await telegram.sendCarouselPreview(files, carouselData.caption, carouselData.topic, manifestKey, cdnUrls);
+
+    // Also send an explicit separate button message so Telegram clients never hide it
+    const keyboard = {
+      inline_keyboard: [
+        [
+          { text: '✅ Approve & Publish', callback_data: `approve_${manifestKey}` },
+          { text: '🔄 Regenerate', callback_data: 'regenerate' }
+        ],
+        [
+          { text: '🗑️ Discard Draft', callback_data: 'discard' }
+        ]
+      ]
+    };
+
+    await fetch(`https://api.telegram.org/bot${process.env.TELEGRAM_BOT_TOKEN}/sendMessage`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        chat_id: process.env.TELEGRAM_CHAT_ID,
+        text: `⚡ Action Required: Click below to publish [${carouselData.topic}] to Instagram:`,
+        reply_markup: keyboard
+      })
+    });
+
     console.log('✅ Scheduled draft dispatched to phone successfully!\n');
   } catch (err) {
     console.error('❌ Scheduler error:', err.message);
