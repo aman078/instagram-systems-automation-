@@ -22,19 +22,20 @@ async function runScheduledPost() {
   }
 
   try {
-    // 1. Let Gemini autonomously discover an insightful human systems topic
+    // 1. Let Gemini discover an insightful human systems topic
     console.log('🤖 Brainstorming next systems concept with Gemini...');
     const carouselData = await generateCarouselData();
 
     // 2. Render the cute parchment slides
     const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
-    const safeTitle = carouselData.topic.toLowerCase().replace(/[^a-z0-9]+/g, '-');
-    const outputDir = path.join(__dirname, '..', 'output', `${timestamp}_${safeTitle}`);
+    const safeTitle = carouselData.topic.toLowerCase().replace(/[^a-z0-9]+/g, '-').slice(0, 30);
+    const manifestKey = `${timestamp}_${safeTitle}`;
+    const outputDir = path.join(__dirname, '..', 'output', manifestKey);
 
     console.log(`🎨 Rendering slides to: ${outputDir}`);
     const files = await renderCarousel(carouselData, outputDir);
 
-    // 3. Stage slides immediately to public CDN so approval works from anywhere (Cloud or Local)
+    // 3. Stage slides immediately to public CDN
     console.log('☁️ Staging slides to CDN...');
     const cdnUrls = [];
     for (const f of files) {
@@ -42,23 +43,26 @@ async function runScheduledPost() {
       cdnUrls.push(url);
     }
 
-    // Save a manifest with CDN urls and caption
-    const manifest = {
+    // Save locally and in cloud staging registry
+    const cloudStagingPath = path.join(__dirname, '..', 'output', 'cloud_staged.json');
+    let db = {};
+    if (fs.existsSync(cloudStagingPath)) {
+      try { db = JSON.parse(fs.readFileSync(cloudStagingPath, 'utf8')); } catch(e) {}
+    }
+    db[manifestKey] = {
       topic: carouselData.topic,
       caption: carouselData.caption,
-      cdnUrls: cdnUrls
+      cdnUrls: cdnUrls,
+      timestamp: new Date().toISOString()
     };
+    fs.mkdirSync(path.dirname(cloudStagingPath), { recursive: true });
+    fs.writeFileSync(cloudStagingPath, JSON.stringify(db, null, 2), 'utf8');
 
-    // Encode a short key for callback
-    const manifestKey = `${timestamp}_${safeTitle}`;
-    // If running in cloud, save to GitHub repository or public Gist / temporary cache
-    fs.writeFileSync(path.join(outputDir, 'manifest.json'), JSON.stringify(manifest, null, 2), 'utf8');
-
-    // 4. Dispatch directly to Aman's phone with live 1-click approval buttons
+    // 4. Dispatch directly to phone with 1-click approval
     console.log('📱 Dispatching review draft to Telegram...');
     await telegram.sendCarouselPreview(files, carouselData.caption, carouselData.topic, manifestKey, cdnUrls);
 
-    // Also send an explicit separate button message so Telegram clients never hide it
+    // Also send an explicit separate button message
     const keyboard = {
       inline_keyboard: [
         [

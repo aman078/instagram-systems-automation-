@@ -43,79 +43,115 @@ export async function renderCarousel(carouselData, outputDir) {
     const slideNum = (i + 1).toString();
     const totalNum = totalSlides.toString();
 
-    // Build points HTML
-    let pointsHtml = '';
-    if (slide.points && Array.isArray(slide.points)) {
-      pointsHtml = slide.points.map((pt, idx) => `
-        <div class="point-item">
-          <div class="point-bubble">${idx + 1}</div>
-          <div class="point-text">${pt}</div>
-        </div>
-      `).join('');
-    }
+    // 1. Build Slide Body (Diagram, Points, or both)
+    let bodyHtml = '';
 
-    // Build takeaway sticky note HTML if present
-    let takeawayHtml = '';
-    if (slide.takeaway) {
-      takeawayHtml = `
-        <div class="sticky-note">
-          <span style="font-size: 26px;">💡</span>
-          <div class="sticky-text">
-            <strong>${slide.takeaway.label || 'The Human Lesson'}:</strong> "${slide.takeaway.text}"
+    // If slide has a visual explainer / diagram
+    if (slide.diagram && slide.diagram.steps && Array.isArray(slide.diagram.steps)) {
+      const badge = slide.diagram.badge || '🔄 The System Reaction';
+      const stepsHtml = slide.diagram.steps.map((st, sIdx) => {
+        const isLast = sIdx === slide.diagram.steps.length - 1;
+        const highlightClass = isLast ? ' highlight' : '';
+        const arrowHtml = !isLast ? `<div class="diagram-arrow">↓</div>` : '';
+        return `
+          <div class="diagram-step${highlightClass}">
+            <div class="step-icon-bubble">${st.icon || '📌'}</div>
+            <div class="step-content">
+              <div class="step-label">${st.label || `Step ${sIdx + 1}`}</div>
+              <div class="step-title">${st.title}</div>
+            </div>
+          </div>
+          ${arrowHtml}
+        `;
+      }).join('');
+
+      bodyHtml += `
+        <div class="diagram-card">
+          <div class="diagram-badge">${badge}</div>
+          <div class="diagram-chain">
+            ${stepsHtml}
           </div>
         </div>
       `;
     }
 
-    // Visual Continuity: Progressively walk character across the line
-    // Slide 1: 15% -> Slide 2: 35% -> Slide 3: 55% -> Slide 4: 75% -> Slide 5: 95%
+    // If slide has narrative bullet points
+    if (slide.points && Array.isArray(slide.points) && slide.points.length > 0) {
+      const pointsListHtml = slide.points.map((pt, idx) => `
+        <div class="point-item">
+          <div class="point-bubble">${idx + 1}</div>
+          <div class="point-text">${pt}</div>
+        </div>
+      `).join('');
+
+      bodyHtml += `
+        <div class="points-list">
+          ${pointsListHtml}
+        </div>
+      `;
+    }
+
+    // 2. Build Takeaway Sticky Note HTML
+    let takeawayHtml = '';
+    if (slide.takeaway && slide.takeaway.text) {
+      takeawayHtml = `
+        <div class="sticky-note">
+          <span style="font-size: 26px;">💡</span>
+          <div class="sticky-text">
+            <strong>${slide.takeaway.label || 'The Mental Model'}:</strong> "${slide.takeaway.text}"
+          </div>
+        </div>
+      `;
+    }
+
+    // 3. Visual Continuity: Progressively walk character across the line
     const progressPercent = Math.round(((i + 1) / totalSlides) * 100);
     const characterIcons = ['🐾', '🚶‍♂️', '👀', '💡', '🌱'];
     const currentIcon = characterIcons[i % characterIcons.length];
 
-    // Replace placeholders in HTML
-    let slideHtml = templateHtml
-      .replace(/Chapter 01/g, `Chapter ${carouselData.episode || '01'}`)
-      .replace(/@systems\.thinking\.lab/g, carouselData.handle || '@systems.thinking.lab')
-      .replace(/✨ The True Story/g, slide.tag || '✨ The Story')
-      .replace(/Why Paying For Dead Snakes Made More Snakes/g, slide.title)
-      .replace(/How an honest rule in colonial Delhi backfired completely\./g, slide.subtitle || '')
-      .replace(/<div class="points-list" id="pointsList">[\s\S]*?<\/div>/, `<div class="points-list" id="pointsList">${pointsHtml}</div>`)
-      .replace(/<div class="sticky-note" id="takeawayCard">[\s\S]*?<\/div>/, takeawayHtml)
-      .replace(/<span id="currentSlide">1<\/span>/, `<span id="currentSlide">${slideNum}</span>`)
-      .replace(/<span id="totalSlides">5<\/span>/, `<span id="totalSlides">${totalNum}</span>`)
-      .replace(/right: 0px;/, `left: calc(${progressPercent}% - 20px);`)
-      .replace(/🐾/, currentIcon);
+    // 4. Footer CTA
+    const footerAction = (i === totalSlides - 1)
+      ? `<span>Save for your shelf</span><span class="arrow">🔖</span>`
+      : `<span>Turn the page</span><span class="arrow">➔</span>`;
 
-    if (i === totalSlides - 1) {
-      // Last slide CTA
-      slideHtml = slideHtml.replace(
-        /<div class="next-hint" id="actionHint">[\s\S]*?<\/div>/,
-        `<div class="next-hint" id="actionHint"><span>Save for your shelf</span><span class="arrow">🔖</span></div>`
-      );
-    }
+    // 5. Clean Template Replacement (No regex fragility, exact placeholders)
+    let slideHtml = templateHtml
+      .replaceAll('{{CHAPTER_NUM}}', carouselData.episode || '01')
+      .replaceAll('{{CURRENT_SLIDE}}', slideNum)
+      .replaceAll('{{TOTAL_SLIDES}}', totalNum)
+      .replaceAll('{{SLIDE_TAG}}', slide.tag || '✨ The Story')
+      .replaceAll('{{SLIDE_TITLE}}', slide.title || '')
+      .replaceAll('{{SLIDE_SUBTITLE}}', slide.subtitle || '')
+      .replaceAll('{{SLIDE_BODY}}', bodyHtml)
+      .replaceAll('{{SLIDE_TAKEAWAY}}', takeawayHtml)
+      .replaceAll('{{TRAIL_STYLE}}', `left: calc(${progressPercent}% - 20px);`)
+      .replaceAll('{{TRAIL_ICON}}', currentIcon)
+      .replaceAll('{{HANDLE}}', carouselData.handle || '@systems.thinking.lab')
+      .replaceAll('{{FOOTER_ACTION}}', footerAction);
 
     await page.setContent(slideHtml, { waitUntil: 'domcontentloaded' });
     try {
       await page.evaluateHandle('document.fonts.ready');
     } catch (e) {
-      // Font fallback is fine
+      // Continue even if font ready check times out
     }
 
-    const outputPath = path.join(outputDir, `slide_${slideNum}.png`);
-    await page.screenshot({ path: outputPath, type: 'png' });
-    generatedFiles.push(outputPath);
-    console.log(`Rendered: ${outputPath}`);
+    const outputFile = path.join(outputDir, `slide_${slideNum}.png`);
+    await page.screenshot({
+      path: outputFile,
+      type: 'png'
+    });
+
+    console.log(`Rendered: ${outputFile}`);
+    generatedFiles.push(outputFile);
   }
 
   await browser.close();
 
-  // Save caption.txt
-  if (carouselData.caption) {
-    const captionPath = path.join(outputDir, 'caption.txt');
-    fs.writeFileSync(captionPath, carouselData.caption, 'utf8');
-    console.log(`Saved caption: ${captionPath}`);
-  }
+  // Save caption alongside images
+  const captionPath = path.join(outputDir, 'caption.txt');
+  fs.writeFileSync(captionPath, carouselData.caption, 'utf8');
+  console.log(`Saved caption: ${captionPath}`);
 
   return generatedFiles;
 }

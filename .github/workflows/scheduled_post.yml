@@ -6,6 +6,9 @@ on:
     - cron: '0 3 * * 1,3,5'
   workflow_dispatch: # Allows manual trigger from GitHub UI / Mobile App anytime
 
+permissions:
+  contents: write
+
 jobs:
   generate_and_dispatch:
     runs-on: ubuntu-latest
@@ -35,3 +38,12 @@ jobs:
           META_ACCESS_TOKEN: ${{ secrets.META_ACCESS_TOKEN }}
           INSTAGRAM_ACCOUNT_ID: ${{ secrets.INSTAGRAM_ACCOUNT_ID }}
         run: node src/cron_trigger.js
+
+      - name: Save Post History and Cloud Staging
+        if: always()
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          git add history.json output/cloud_staged.json || true
+          git commit -m "chore: record post history and cloud staging [skip ci]" || echo "No changes to commit"
+          git push || echo "Push skipped"

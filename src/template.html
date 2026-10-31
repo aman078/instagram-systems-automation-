@@ -2,58 +2,61 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Cute Human Parchment Slide</title>
+  <title>Systems Thinking - Instagram Carousel</title>
+  <!-- Google Fonts: Newsreader (Warm Editorial Serif) + Plus Jakarta Sans + Caveat (Friendly Hand-drawn) -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@600;700&family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;0,6..72,600;0,6..72,700;1,6..72,400;1,6..72,600&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  
   <style>
-    @import url('https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,500;0,6..72,600;1,6..72,400&family=Plus+Jakarta+Sans:wght@400;500;600;700&family=Caveat:wght@600;700&display=swap');
-
     * {
-      box-sizing: border-box;
       margin: 0;
       padding: 0;
+      box-sizing: border-box;
     }
 
     body {
       width: 1080px;
       height: 1350px;
-      background-color: #F7F4EE;
-      color: #22201D;
-      font-family: 'Plus Jakarta Sans', -apple-system, sans-serif;
       overflow: hidden;
-      display: flex;
-      flex-direction: column;
+      background-color: #F7F4EE; /* Soft warm textured parchment */
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      color: #292524;
       position: relative;
+      -webkit-font-smoothing: antialiased;
     }
 
-    /* Subtle warm paper texture */
+    /* Subtle paper texture overlay */
     .paper-texture {
       position: absolute;
-      inset: 0;
-      background-image: 
-        radial-gradient(circle at 10% 20%, rgba(215, 203, 185, 0.25) 0%, transparent 40%),
-        radial-gradient(circle at 90% 80%, rgba(200, 185, 160, 0.2) 0%, transparent 45%),
-        linear-gradient(to right, rgba(0, 0, 0, 0.015) 1px, transparent 1px),
-        linear-gradient(to bottom, rgba(0, 0, 0, 0.015) 1px, transparent 1px);
-      background-size: 100% 100%, 100% 100%, 40px 40px, 40px 40px;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      opacity: 0.035;
       pointer-events: none;
+      background-image: radial-gradient(#292524 1px, transparent 1px);
+      background-size: 24px 24px;
     }
 
     .container {
-      position: relative;
-      z-index: 10;
+      width: 100%;
+      height: 100%;
+      padding: 68px 80px 58px 80px;
       display: flex;
       flex-direction: column;
       justify-content: space-between;
-      height: 100%;
-      padding: 64px 72px 56px 72px;
+      position: relative;
+      z-index: 2;
     }
 
-    /* Top Paper Header */
+    /* Top Navigation / Header */
     .header {
       display: flex;
       justify-content: space-between;
       align-items: center;
       border-bottom: 2px dashed rgba(60, 50, 40, 0.15);
-      padding-bottom: 22px;
+      padding-bottom: 20px;
     }
 
     .series-tag {
@@ -62,79 +65,89 @@
       gap: 10px;
       font-size: 15px;
       font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
       color: #78716C;
-      letter-spacing: 0.02em;
     }
 
     .tag-pill {
-      background: #EFE9DE;
-      color: #57534E;
-      padding: 4px 14px;
-      border-radius: 9999px;
-      border: 1px solid rgba(60, 50, 40, 0.12);
+      background: #EAE5D9;
+      color: #44403C;
+      padding: 6px 14px;
+      border-radius: 999px;
       font-size: 13px;
-      font-weight: 600;
+      font-weight: 800;
+      border: 1px solid rgba(60, 50, 40, 0.12);
     }
 
     .page-indicator {
       font-family: 'Newsreader', serif;
       font-style: italic;
-      font-size: 18px;
-      color: #78716C;
+      font-size: 20px;
       font-weight: 600;
+      color: #78716C;
     }
 
-    /* Main Content */
+    /* Main Content Area */
     .main-content {
+      flex: 1;
       display: flex;
       flex-direction: column;
-      flex-grow: 1;
       justify-content: center;
-      padding: 24px 0 10px 0;
+      padding: 24px 0 16px 0;
     }
 
     .cute-badge {
+      align-self: flex-start;
       display: inline-flex;
       align-items: center;
       gap: 8px;
-      font-family: 'Caveat', cursive;
-      font-size: 24px;
-      color: #C2410C;
-      margin-bottom: 12px;
+      background: #FED7AA;
+      color: #9A3412;
+      font-size: 14px;
+      font-weight: 800;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      padding: 6px 16px;
+      border-radius: 12px;
+      margin-bottom: 18px;
+      border: 1px solid rgba(154, 52, 18, 0.2);
     }
 
     .title {
       font-family: 'Newsreader', serif;
-      font-size: 52px;
-      font-weight: 600;
-      line-height: 1.15;
-      letter-spacing: -0.02em;
+      font-size: 56px;
+      line-height: 1.14;
+      font-weight: 700;
       color: #1C1917;
-      margin-bottom: 16px;
+      letter-spacing: -0.02em;
+      margin-bottom: 12px;
     }
 
     .subtitle {
-      font-size: 22px;
-      font-weight: 400;
-      line-height: 1.5;
+      font-size: 24px;
+      line-height: 1.4;
       color: #57534E;
-      margin-bottom: 34px;
+      font-weight: 500;
+      margin-bottom: 24px;
+      max-width: 900px;
     }
 
-    /* Soft Friendly Card */
+    /* Note Card with paper-border styling */
     .note-card {
-      background: #FFFFFF;
-      border: 1.5px solid rgba(60, 50, 40, 0.1);
+      background: #FFFDF9;
       border-radius: 24px;
-      padding: 34px 38px;
-      box-shadow: 0 12px 30px -10px rgba(70, 55, 40, 0.08);
+      padding: 30px 34px;
+      border: 1.5px solid #E7E2D6;
+      box-shadow: 0 12px 32px rgba(60, 50, 40, 0.04), 0 2px 6px rgba(60, 50, 40, 0.03);
       position: relative;
     }
 
+    /* Points list */
     .points-list {
       display: flex;
       flex-direction: column;
-      gap: 22px;
+      gap: 16px;
     }
 
     .point-item {
@@ -172,10 +185,101 @@
       font-weight: 700;
     }
 
+    /* Visual Explainer / Feedback Diagram */
+    .diagram-card {
+      margin: 4px 0;
+      padding: 20px 22px;
+      background: #FAF7F0;
+      border: 1.5px dashed #D6CEBE;
+      border-radius: 20px;
+    }
+
+    .diagram-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 13px;
+      font-weight: 800;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: #9A3412;
+      background: #FFEDD5;
+      padding: 4px 12px;
+      border-radius: 10px;
+      margin-bottom: 16px;
+    }
+
+    .diagram-chain {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      position: relative;
+    }
+
+    .diagram-step {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      padding: 12px 18px;
+      background: #FFFDF9;
+      border: 1px solid #E7E0D3;
+      border-radius: 14px;
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.02);
+    }
+
+    .diagram-step.highlight {
+      background: #FEF3C7;
+      border-color: #F59E0B;
+    }
+
+    .step-icon-bubble {
+      width: 44px;
+      height: 44px;
+      border-radius: 12px;
+      background: #FFFFFF;
+      border: 1px solid #E5E0D8;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 22px;
+      flex-shrink: 0;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.03);
+    }
+
+    .step-content {
+      flex: 1;
+    }
+
+    .step-content .step-label {
+      font-size: 13px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: #78716C;
+      margin-bottom: 2px;
+    }
+
+    .step-content .step-title {
+      font-size: 19px;
+      font-weight: 700;
+      color: #1C1917;
+      line-height: 1.3;
+    }
+
+    .diagram-arrow {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      font-size: 18px;
+      color: #C2410C;
+      font-weight: bold;
+      margin: -3px 0;
+    }
+
     /* Hand-Drawn Margin Sticky Note */
     .sticky-note {
-      margin-top: 28px;
-      padding: 20px 24px;
+      margin-top: 24px;
+      padding: 18px 24px;
       background: #FEF9C3; /* Soft warm post-it yellow */
       border: 1px dashed rgba(202, 138, 4, 0.4);
       border-radius: 16px;
@@ -197,7 +301,7 @@
     .trail-container {
       position: relative;
       height: 30px;
-      margin-top: 28px;
+      margin-top: 24px;
       display: flex;
       align-items: center;
     }
@@ -251,52 +355,36 @@
     <div class="header">
       <div class="series-tag">
         <span class="tag-pill">🌱 Systems for Humans</span>
-        <span>Chapter 01</span>
+        <span>Chapter {{CHAPTER_NUM}}</span>
       </div>
       <div class="page-indicator">
-        <span id="currentSlide">1</span> of <span id="totalSlides">5</span>
+        <span>{{CURRENT_SLIDE}}</span> of <span>{{TOTAL_SLIDES}}</span>
       </div>
     </div>
 
     <!-- Main Content -->
     <div class="main-content">
-      <div class="cute-badge" id="slideTypeTag">✨ The True Story</div>
-      <h1 class="title" id="slideTitle">Why Paying For Dead Snakes Made More Snakes</h1>
-      <p class="subtitle" id="slideSubtitle">How an honest rule in colonial Delhi backfired completely.</p>
+      <div class="cute-badge">{{SLIDE_TAG}}</div>
+      <h1 class="title">{{SLIDE_TITLE}}</h1>
+      <p class="subtitle">{{SLIDE_SUBTITLE}}</p>
 
       <div class="note-card">
-        <div class="points-list" id="pointsList">
-          <div class="point-item">
-            <div class="point-bubble">1</div>
-            <div class="point-text"><strong>The Panic:</strong> Dangerous wild cobras were invading the neighborhood streets.</div>
-          </div>
-          <div class="point-item">
-            <div class="point-bubble">2</div>
-            <div class="point-text"><strong>The Plan:</strong> The city offered a cash prize for every dead cobra brought in.</div>
-          </div>
-        </div>
-
-        <div class="sticky-note" id="takeawayCard">
-          <span style="font-size: 24px;">💡</span>
-          <div class="sticky-text">
-            <strong>The Human Trap:</strong> "Reward people for killing snakes and you get fewer snakes, right?"
-          </div>
-        </div>
+        {{SLIDE_BODY}}
+        {{SLIDE_TAKEAWAY}}
       </div>
 
       <!-- Seamless Continuity Thread with Walk-Along Character -->
       <div class="trail-container">
         <div class="trail-line"></div>
-        <div class="trail-character" id="trailCharacter" style="right: 0px;">🐾</div>
+        <div class="trail-character" style="{{TRAIL_STYLE}}">{{TRAIL_ICON}}</div>
       </div>
     </div>
 
     <!-- Footer -->
     <div class="footer">
-      <div class="handle">@systems.thinking.lab</div>
-      <div class="next-hint" id="actionHint">
-        <span>Turn the page</span>
-        <span class="arrow">➔</span>
+      <div class="handle">{{HANDLE}}</div>
+      <div class="next-hint">
+        {{FOOTER_ACTION}}
       </div>
     </div>
   </div>
