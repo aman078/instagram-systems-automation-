@@ -43,10 +43,52 @@ export async function renderCarousel(carouselData, outputDir) {
     const slideNum = (i + 1).toString();
     const totalNum = totalSlides.toString();
 
-    // 1. Build Slide Body (Diagram, Points, or both)
+    // 1. Build Slide Body
     let bodyHtml = '';
 
-    // If slide has a visual explainer / diagram
+    // A. Slide 1: 5-Second Visual Self-Explainer (Doodle / Contrast Grid)
+    if (slide.selfExplainer) {
+      const se = slide.selfExplainer;
+      const tag = se.tag || '✨ THE 5-SECOND EXPLAINER';
+      const leftBadge = se.left?.badge || 'What We Think';
+      const leftIcon = se.left?.icon || '💡';
+      const leftText = se.left?.text || '';
+      const rightBadge = se.right?.badge || 'What Actually Happens';
+      const rightIcon = se.right?.icon || '💥';
+      const rightText = se.right?.text || '';
+      const footnote = se.footnote || '';
+
+      bodyHtml += `
+        <div class="explainer-card">
+          <div class="explainer-header">
+            <span class="explainer-tag">${tag}</span>
+          </div>
+          <div class="contrast-grid">
+            <div class="contrast-col intuition">
+              <div class="col-badge">${leftBadge}</div>
+              <div class="col-icon">${leftIcon}</div>
+              <div class="col-desc">${leftText}</div>
+            </div>
+            <div class="contrast-divider">
+              <div class="vs-badge">VS</div>
+            </div>
+            <div class="contrast-col reality">
+              <div class="col-badge">${rightBadge}</div>
+              <div class="col-icon">${rightIcon}</div>
+              <div class="col-desc">${rightText}</div>
+            </div>
+          </div>
+          ${footnote ? `
+            <div class="explainer-footnote">
+              <span>🐾</span>
+              <em>"${footnote}"</em>
+            </div>
+          ` : ''}
+        </div>
+      `;
+    }
+
+    // B. Slide 3: Visual Explainer / Feedback Loop Diagram
     if (slide.diagram && slide.diagram.steps && Array.isArray(slide.diagram.steps)) {
       const badge = slide.diagram.badge || '🔄 The System Reaction';
       const stepsHtml = slide.diagram.steps.map((st, sIdx) => {
@@ -75,7 +117,7 @@ export async function renderCarousel(carouselData, outputDir) {
       `;
     }
 
-    // If slide has narrative bullet points
+    // C. Bullet Points (if present on slide)
     if (slide.points && Array.isArray(slide.points) && slide.points.length > 0) {
       const pointsListHtml = slide.points.map((pt, idx) => `
         <div class="point-item">
@@ -114,7 +156,7 @@ export async function renderCarousel(carouselData, outputDir) {
       ? `<span>Save for your shelf</span><span class="arrow">🔖</span>`
       : `<span>Turn the page</span><span class="arrow">➔</span>`;
 
-    // 5. Clean Template Replacement (No regex fragility, exact placeholders)
+    // 5. Clean Template Replacement
     let slideHtml = templateHtml
       .replaceAll('{{CHAPTER_NUM}}', carouselData.episode || '01')
       .replaceAll('{{CURRENT_SLIDE}}', slideNum)
