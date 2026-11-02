@@ -1,6 +1,7 @@
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import { execSync } from 'child_process';
 import dotenv from 'dotenv';
 import { TelegramNotifier } from './telegram.js';
 import { InstagramPublisher, uploadToPublicCDN } from './publisher.js';
@@ -11,6 +12,38 @@ dotenv.config();
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
+
+function getAutopilotState() {
+  const configPath = path.join(__dirname, '..', 'autopilot.json');
+  if (fs.existsSync(configPath)) {
+    try {
+      const cfg = JSON.parse(fs.readFileSync(configPath, 'utf8'));
+      return Boolean(cfg.autopilot);
+    } catch(e) {}
+  }
+  return false;
+}
+
+function setAutopilotState(enabled) {
+  const configPath = path.join(__dirname, '..', 'autopilot.json');
+  const data = {
+    autopilot: enabled,
+    updated_at: new Date().toISOString(),
+    updated_by: 'Telegram'
+  };
+  fs.writeFileSync(configPath, JSON.stringify(data, null, 2), 'utf8');
+
+  // Push to GitHub so the cloud runner picks it up immediately
+  try {
+    const repoDir = path.join(__dirname, '..');
+    execSync('git add autopilot.json', { cwd: repoDir });
+    execSync(`git commit -m "chore: toggle autopilot mode to ${enabled ? 'ON' : 'OFF'} [skip ci]"`, { cwd: repoDir });
+    execSync('git push origin main', { cwd: repoDir });
+    console.log(`Synced autopilot=${enabled} to GitHub repository.`);
+  } catch (err) {
+    console.log('Git sync note:', err.message);
+  }
+}
 
 async function main() {
   const telegram = new TelegramNotifier();
@@ -31,6 +64,43 @@ async function main() {
   await telegram.startPolling(async (action, query) => {
     console.log(`\n📲 User triggered action: [${action}]`);
 
+    // 1. Handle Autopilot Switch Toggles
+    if (action === 'toggle_autopilot_on' || action === 'autopilot_command:/autopilot on' || action === 'autopilot_command:autopilot on') {
+      setAutopilotState(true);
+      await telegram.sendMessage(`🟢 AUTOPILOT ENABLED!\n\nFrom now on, carousels will generate and post directly to Instagram on schedule without needing manual approval.\n\nType /autopilot off anytime to switch back to manual approval.`);
+      return;
+    }
+
+    if (action === 'toggle_autopilot_off' || action === 'autopilot_command:/autopilot off' || action === 'autopilot_command:autopilot off') {
+      setAutopilotState(false);
+      await telegram.sendMessage(`🔴 AUTOPILOT DISABLED!\n\nPosts will now wait for your manual approval on Telegram before going live.`);
+      return;
+    }
+
+    if (action.startsWith('autopilot_command:')) {
+      const currentState = getAutopilotState();
+      const keyboard = {
+        inline_keyboard: [
+          [
+            { text: currentState ? '🟢 Autopilot is ON' : 'Turn ON 🟢', callback_data: 'toggle_autopilot_on' },
+            { text: !currentState ? '🔴 Autopilot is OFF' : 'Turn OFF 🔴', callback_data: 'toggle_autopilot_off' }
+          ]
+        ]
+      };
+
+      await fetch(`https://api.telegram.org/bot${process.env.TELEGRAM_BOT_TOKEN}/sendMessage`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          chat_id: process.env.TELEGRAM_CHAT_ID,
+          text: `⚙️ AUTOPILOT SWITCH:\n\nCurrent Status: ${currentState ? '🟢 ON (Direct Auto-Publishing)' : '🔴 OFF (Manual Telegram Approval Required)'}\n\nTap below to flip the switch:`,
+          reply_markup: keyboard
+        })
+      });
+      return;
+    }
+
+    // 2. Handle Manual Approval
     if (action.startsWith('approve_')) {
       const folderName = action.replace('approve_', '');
       const outputDir = path.join(__dirname, '..', 'output', folderName);
@@ -55,7 +125,6 @@ async function main() {
             const db = await res.json();
             cloudRecord = db[folderName];
             if (cloudRecord) {
-              // Save locally for future reference
               fs.mkdirSync(path.dirname(cloudStagingPath), { recursive: true });
               fs.writeFileSync(cloudStagingPath, JSON.stringify(db, null, 2), 'utf8');
             }

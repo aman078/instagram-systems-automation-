@@ -4,9 +4,6 @@ import { fileURLToPath } from 'url';
 import dotenv from 'dotenv';
 import { TelegramNotifier } from './telegram.js';
 import { InstagramPublisher } from './publisher.js';
-import { generateCarouselData } from './generator.js';
-import { renderCarousel } from './renderer.js';
-import { uploadToPublicCDN } from './publisher.js';
 
 dotenv.config();
 
@@ -23,7 +20,7 @@ export default async function handler(req, res) {
   const update = req.body;
 
   try {
-    // 1. Handle Button Taps (Approve, Regenerate, Discard)
+    // 1. Handle Button Taps (Approve, Regenerate, Discard, Autopilot Toggle)
     if (update.callback_query) {
       const query = update.callback_query;
       const action = query.data;
@@ -53,17 +50,16 @@ export default async function handler(req, res) {
           }
         }
       } else if (action === 'regenerate') {
-        // Trigger GitHub Action Workflow Dispatch in the cloud
-        await triggerCloudGeneration(telegram);
+        await triggerCloudGeneration(telegram, false);
       } else if (action === 'discard') {
         await telegram.sendMessage('🗑️ Draft discarded.');
       }
     } 
-    // 2. Handle Text Commands (/generate)
+    // 2. Handle Text Commands (/generate, /autopilot)
     else if (update.message && update.message.text) {
       const text = update.message.text.trim().toLowerCase();
       if (text === '/generate' || text === 'generate') {
-        await triggerCloudGeneration(telegram);
+        await triggerCloudGeneration(telegram, false);
       }
     }
   } catch (err) {
@@ -73,13 +69,12 @@ export default async function handler(req, res) {
   return res.status(200).json({ ok: true });
 }
 
-async function triggerCloudGeneration(telegram) {
+async function triggerCloudGeneration(telegram, autoPublish = false) {
   await telegram.sendMessage('🔄 Cooking a fresh topic in the cloud (GitHub Actions)... Slides arriving in ~25 seconds!');
 
-  // Trigger GitHub Actions workflow dispatch via REST API
   const ghToken = process.env.GITHUB_PAT || process.env.GH_TOKEN;
   if (!ghToken) {
-    console.log('No GITHUB_PAT configured. Local generation fallback.');
+    console.log('No GITHUB_PAT configured.');
     return;
   }
 
@@ -90,7 +85,12 @@ async function triggerCloudGeneration(telegram) {
       'Accept': 'application/vnd.github.v3+json',
       'User-Agent': 'TelegramBot'
     },
-    body: JSON.stringify({ ref: 'main' })
+    body: JSON.stringify({
+      ref: 'main',
+      inputs: {
+        auto_publish: String(autoPublish)
+      }
+    })
   });
 
   if (res.status === 204) {

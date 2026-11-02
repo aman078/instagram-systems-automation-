@@ -5,16 +5,36 @@ import dotenv from 'dotenv';
 import { generateCarouselData } from './generator.js';
 import { renderCarousel } from './renderer.js';
 import { TelegramNotifier } from './telegram.js';
-import { uploadToPublicCDN } from './publisher.js';
+import { uploadToPublicCDN, InstagramPublisher } from './publisher.js';
 
 dotenv.config();
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
+export function isAutopilotEnabled() {
+  if (process.env.AUTO_PUBLISH === 'true' || process.env.AUTO_PUBLISH === '1') {
+    return true;
+  }
+  const configPath = path.join(__dirname, '..', 'autopilot.json');
+  if (fs.existsSync(configPath)) {
+    try {
+      const cfg = JSON.parse(fs.readFileSync(configPath, 'utf8'));
+      if (cfg.autopilot === true) return true;
+    } catch (e) {}
+  }
+  return false;
+}
+
 async function runScheduledPost() {
-  console.log('\n⏰ [SCHEDULER] Waking up for automated post generation...');
+  const autopilot = isAutopilotEnabled();
+  console.log('\n======================================================');
+  console.log(`⏰ [SCHEDULER] Waking up for automated post generation...`);
+  console.log(`🤖 Mode: ${autopilot ? '🟢 AUTOPILOT (Auto-Publish ON)' : '🟡 MANUAL APPROVAL (Waiting for Telegram)'}`);
+  console.log('======================================================\n');
+
   const telegram = new TelegramNotifier();
+  const publisher = new InstagramPublisher();
 
   if (!telegram.isConfigured()) {
     console.error('❌ Telegram not configured in .env');
@@ -53,16 +73,59 @@ async function runScheduledPost() {
       topic: carouselData.topic,
       caption: carouselData.caption,
       cdnUrls: cdnUrls,
-      timestamp: new Date().toISOString()
+      timestamp: new Date().toISOString(),
+      autopilot: autopilot
     };
     fs.mkdirSync(path.dirname(cloudStagingPath), { recursive: true });
     fs.writeFileSync(cloudStagingPath, JSON.stringify(db, null, 2), 'utf8');
 
-    // 4. Dispatch directly to phone with 1-click approval
-    console.log('📱 Dispatching review draft to Telegram...');
+    // 4. If AUTOPILOT is ON, publish directly to Instagram!
+    if (autopilot) {
+      console.log('🚀 Autopilot active: Publishing directly to Instagram without waiting for approval...');
+      try {
+        const result = await publisher.publishFromUrls(cdnUrls, carouselData.caption);
+
+        if (result.success) {
+          console.log(`🎉 Autopilot successfully published to Instagram! Post ID: ${result.postId}`);
+
+          // Send preview album to Telegram so Aman sees what was posted
+          await telegram.sendCarouselPreview(files, carouselData.caption, carouselData.topic, manifestKey, cdnUrls);
+
+          // Send confirmation notice
+          await fetch(`https://api.telegram.org/bot${process.env.TELEGRAM_BOT_TOKEN}/sendMessage`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              chat_id: process.env.TELEGRAM_CHAT_ID,
+              text: `🎉 [AUTOPILOT LIVE] Post is LIVE on Instagram!\n\n📌 Topic: ${carouselData.topic}\n🆔 Post ID: ${result.postId}\n🔗 Handle: @systems.thinking.lab\n\n(Autopilot mode is ON: Post was generated and published automatically without waiting for approval).`
+            })
+          });
+
+          console.log('✅ Autopilot execution complete!\n');
+          return;
+        } else if (result.simulated) {
+          console.log('Publish simulated (credentials not configured).');
+        }
+      } catch (pubErr) {
+        console.error('⚠️ Autopilot direct publish encountered error:', pubErr.message);
+        console.log('Falling back to Telegram manual approval message...');
+
+        // Notify Aman of the issue so he knows why it fell back
+        await fetch(`https://api.telegram.org/bot${process.env.TELEGRAM_BOT_TOKEN}/sendMessage`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            chat_id: process.env.TELEGRAM_CHAT_ID,
+            text: `⚠️ [Autopilot Notice] Generated [${carouselData.topic}], but direct Instagram publish encountered an error: ${pubErr.message}\n\nFalling back to manual approval below:`
+          })
+        });
+      }
+    }
+
+    // 5. Manual Approval Flow (Autopilot is OFF or fallback occurred)
+    console.log('📱 Dispatching review draft to Telegram for manual approval...');
     await telegram.sendCarouselPreview(files, carouselData.caption, carouselData.topic, manifestKey, cdnUrls);
 
-    // Also send an explicit separate button message
     const keyboard = {
       inline_keyboard: [
         [

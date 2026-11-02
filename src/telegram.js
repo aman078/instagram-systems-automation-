@@ -1,147 +1,135 @@
 import fs from 'fs';
 import path from 'path';
 import dotenv from 'dotenv';
-
 dotenv.config();
 
-/**
- * Lightweight Zero-Dependency Telegram Bot Client using native fetch
- */
 export class TelegramNotifier {
   constructor() {
-    this.token = process.env.TELEGRAM_BOT_TOKEN;
+    this.botToken = process.env.TELEGRAM_BOT_TOKEN;
     this.chatId = process.env.TELEGRAM_CHAT_ID;
-    this.apiUrl = `https://api.telegram.org/bot${this.token}`;
+    this.apiUrl = `https://api.telegram.org/bot${this.botToken}`;
   }
 
   isConfigured() {
-    return Boolean(this.token && this.chatId && !this.token.includes('your_') && this.token.length > 10);
+    return Boolean(this.botToken && this.chatId && !this.botToken.includes('your_'));
   }
 
   /**
-   * Send a simple text message to your phone
+   * Send a plain text or markdown message
    */
-  async sendMessage(text) {
-    if (!this.isConfigured()) return;
-    try {
-      await fetch(`${this.apiUrl}/sendMessage`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          chat_id: this.chatId,
-          text: text
-        })
-      });
-    } catch (e) {
-      console.error('Failed to send text message:', e.message);
+  async sendMessage(text, extraParams = {}) {
+    if (!this.isConfigured()) return { simulated: true };
+
+    const res = await fetch(`${this.apiUrl}/sendMessage`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        chat_id: this.chatId,
+        text: text,
+        ...extraParams
+      })
+    });
+
+    const data = await res.json();
+    if (!data.ok) {
+      throw new Error(`Telegram sendMessage failed: ${JSON.stringify(data)}`);
     }
+    return data;
   }
 
   /**
-   * Send the 5 carousel slides as a media album to your phone
+   * Send carousel slides as an album (media group)
    */
-  async sendCarouselPreview(imagePaths, caption, topic, manifestKey = null, cdnUrls = null) {
+  async sendCarouselPreview(imageFilePaths, captionText, topic, folderName = '', cdnUrls = []) {
     if (!this.isConfigured()) {
-      console.log('⚠️ Telegram bot not configured in .env. Skipping Telegram push.');
-      return null;
+      console.log('Telegram not configured. Preview simulated.');
+      return { simulated: true };
     }
 
-    try {
-      console.log('📱 Pushing carousel preview to Telegram...');
+    console.log(`📱 Pushing carousel preview to Telegram...`);
 
-      // Prepare media group
-      const formData = new FormData();
-      const media = [];
+    // Prepare multipart form data for Telegram sendMediaGroup
+    const formData = new FormData();
+    const mediaArray = [];
 
-      for (let i = 0; i < imagePaths.length; i++) {
-        const filePath = imagePaths[i];
-        const fileBlob = new Blob([fs.readFileSync(filePath)], { type: 'image/png' });
-        const fieldName = `photo_${i}`;
-        formData.append(fieldName, fileBlob, path.basename(filePath));
+    for (let i = 0; i < imageFilePaths.length; i++) {
+      const filePath = imageFilePaths[i];
+      const attachName = `slide_${i + 1}`;
+      const fileBytes = fs.readFileSync(filePath);
+      const blob = new Blob([fileBytes], { type: 'image/png' });
 
-        media.push({
-          type: 'photo',
-          media: `attach://${fieldName}`,
-          caption: i === 0 ? `📐 *NEW DRAFT: ${topic}*` : undefined,
-          parse_mode: 'Markdown'
-        });
-      }
+      formData.append(attachName, blob, `slide_${i + 1}.png`);
 
-      formData.append('chat_id', this.chatId);
-      formData.append('media', JSON.stringify(media));
-
-      const albumRes = await fetch(`${this.apiUrl}/sendMediaGroup`, {
-        method: 'POST',
-        body: formData
-      });
-      const albumJson = await albumRes.json();
-
-      if (!albumJson.ok) {
-        console.error('Telegram sendMediaGroup failed:', albumJson);
-      }
-
-      // Send the caption and 1-click action buttons (safe plain text without markdown parsing errors)
-      const textMessage = `📝 Post Caption & Hashtags:\n\n${caption}\n\n👉 Review complete. Click an option below:`;
-
-      // Save a local cloud-staged fallback if manifestKey provided
-      const folderRef = manifestKey || path.basename(path.dirname(imagePaths[0]));
-      if (cdnUrls && cdnUrls.length) {
-        const cloudStagingPath = path.join(__dirname, '..', 'output', 'cloud_staged.json');
-        let db = {};
-        if (fs.existsSync(cloudStagingPath)) {
-          try { db = JSON.parse(fs.readFileSync(cloudStagingPath, 'utf8')); } catch(e) {}
-        }
-        db[folderRef] = { cdnUrls, caption, topic };
-        fs.writeFileSync(cloudStagingPath, JSON.stringify(db, null, 2), 'utf8');
-      }
-
-      const keyboard = {
-        inline_keyboard: [
-          [
-            { text: '✅ Approve & Publish', callback_data: `approve_${folderRef}` },
-            { text: '🔄 Regenerate', callback_data: 'regenerate' }
-          ],
-          [
-            { text: '🗑️ Discard Draft', callback_data: 'discard' }
-          ]
-        ]
+      const mediaItem = {
+        type: 'photo',
+        media: `attach://${attachName}`
       };
 
-      const msgRes = await fetch(`${this.apiUrl}/sendMessage`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          chat_id: this.chatId,
-          text: textMessage,
-          reply_markup: keyboard
-        })
-      });
-
-      const msgJson = await msgRes.json();
-      if (!msgJson.ok) {
-        console.error('Telegram sendMessage button failed:', msgJson);
-      } else {
-        console.log('✅ Telegram preview notification dispatched successfully!');
+      if (i === 0) {
+        mediaItem.caption = `📐 NEW DRAFT: ${topic}`;
       }
-      return msgJson;
-    } catch (err) {
-      console.error('Failed to dispatch Telegram message:', err.message);
-      return null;
+
+      mediaArray.push(mediaItem);
     }
+
+    formData.append('chat_id', this.chatId);
+    formData.append('media', JSON.stringify(mediaArray));
+
+    // Send album
+    const albumRes = await fetch(`${this.apiUrl}/sendMediaGroup`, {
+      method: 'POST',
+      body: formData
+    });
+
+    const albumData = await albumRes.json();
+    if (!albumData.ok) {
+      throw new Error(`Failed to send Telegram media group: ${JSON.stringify(albumData)}`);
+    }
+
+    // Follow up immediately with caption text
+    const cleanCaption = (captionText || '').slice(0, 1000);
+    const captionMsg = `Post Caption & Hashtags:\n\n${cleanCaption}\n\nReview complete. Click an option below:`;
+
+    const keyboard = {
+      inline_keyboard: [
+        [
+          { text: '✅ Approve & Publish', callback_data: `approve_${folderName || 'draft'}` },
+          { text: '🔄 Regenerate', callback_data: 'regenerate' }
+        ],
+        [
+          { text: '🗑️ Discard Draft', callback_data: 'discard' }
+        ]
+      ]
+    };
+
+    await fetch(`${this.apiUrl}/sendMessage`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        chat_id: this.chatId,
+        text: captionMsg,
+        reply_markup: keyboard
+      })
+    });
+
+    console.log(`✅ Telegram preview notification dispatched successfully!`);
+    return { success: true };
   }
 
   /**
-   * Listen for inline button clicks (long polling loop)
+   * Start long-polling Telegram for button presses & commands
    */
   async startPolling(onAction) {
     if (!this.isConfigured()) return;
 
-    console.log('👂 Telegram bot listening for your 1-click approval...');
     let offset = 0;
+    console.log('👂 Telegram bot listening for your 1-click approval & commands...');
 
     while (true) {
       try {
-        const res = await fetch(`${this.apiUrl}/getUpdates?offset=${offset}&timeout=30`);
+        const res = await fetch(`${this.apiUrl}/getUpdates?offset=${offset}&timeout=30`, {
+          signal: AbortSignal.timeout(45000)
+        });
         const data = await res.json();
 
         if (data.ok && Array.isArray(data.result)) {
@@ -169,17 +157,20 @@ export class TelegramNotifier {
             } else if (update.message && update.message.text) {
               const text = update.message.text.trim();
               console.log(`\n💬 Received text message from user: "${text}"`);
-              if (text === '/generate' || text.toLowerCase() === 'generate') {
-                if (onAction) {
-                  await onAction('generate_command', update.message);
-                }
+              const lower = text.toLowerCase();
+              if (lower === '/generate' || lower === 'generate') {
+                if (onAction) await onAction('generate_command', update.message);
+              } else if (lower.startsWith('/autopilot') || lower.startsWith('autopilot')) {
+                if (onAction) await onAction(`autopilot_command:${text}`, update.message);
               }
             }
           }
         }
       } catch (e) {
-        console.error('Polling error:', e.message);
-        await new Promise(r => setTimeout(r, 5000));
+        if (e.name !== 'TimeoutError') {
+          console.error('Polling error:', e.message);
+        }
+        await new Promise(r => setTimeout(r, 2000));
       }
     }
   }
