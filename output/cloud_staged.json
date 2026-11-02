@@ -98,5 +98,32 @@
     "timestamp": "2026-11-02T07:33:21.449Z",
     "isNews": true,
     "autopilot": true
+  },
+  "2026-11-02T21-12-01_normal-accidents-theory-why-co": {
+    "topic": "Normal Accidents Theory: Why complex tightly coupled systems are mathematically guaranteed to fail",
+    "caption": "Why do ultra-safe, highly complex systems still suffer massive, catastrophic failures? \n\n• When parts are tightly wired together, tiny glitches spread instantly.\n• Backup systems often create weird, unexpected new interactions.\n• Humans cannot mentally track all moving parts during a crisis.\n• Adding buffers and decoupling is the only real defense.\n\nHow can you add more breathing room to your daily routines?\n\nSave this post for later.\n\n#SystemsThinking #NormalAccidents #MentalModels #GameTheory #Complexity #ProblemSolving #Productivity #DesignThinking",
+    "cdnUrls": [
+      "https://iili.io/n4PH9MF.png",
+      "https://iili.io/n4PH2cJ.png",
+      "https://iili.io/n4PHfup.png",
+      "https://iili.io/n4PHnnt.png",
+      "https://iili.io/n4PHxPn.png"
+    ],
+    "timestamp": "2026-11-02T21:12:09.728Z",
+    "autopilot": true
+  },
+  "news_2026-11-02T21-12-01_the-global-coffee-belt-migrati": {
+    "topic": "The Global Coffee Belt Migration",
+    "caption": "Your morning coffee isn't just getting expensive—the entire map of agriculture is moving.\n\n• The Event: Rising global temperatures push Arabica coffee out of traditional lowland farms.\n• The First Order: Harvest yields drop 30% in Brazil, Vietnam, and Central America.\n• The Micro Impact: Your daily latte jumps in price as cafes absorb record-high green bean costs.\n• The Macro Shockwave: Farmers race to buy expensive mountain real estate, rewriting global commodity markets forever.\n\nAre you ready to switch to synthetic coffee, or will you pay double for the real bean?\n\nSave this post to sharpen your global systems lens.\n\n#SystemsThinking #GlobalEconomy #Geopolitics #SupplyChain #MacroEconomics #BusinessStrategy #FutureTrends #SecondOrderThinking #ClimateChange #Commodities",
+    "cdnUrls": [
+      "https://iili.io/n4PHBtI.png",
+      "https://iili.io/n4PHoMX.png",
+      "https://iili.io/n4PHIFs.png",
+      "https://iili.io/n4PH5Al.png",
+      "https://iili.io/n4PH7N2.png"
+    ],
+    "timestamp": "2026-11-02T21:12:12.881Z",
+    "isNews": true,
+    "autopilot": true
   }
 }
