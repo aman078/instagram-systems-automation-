@@ -1,0 +1,55 @@
+name: Daily Global News System Radar
+
+on:
+  schedule:
+    # 5:30 PM IST is 12:00 PM UTC (Runs Daily)
+    - cron: '0 12 * * *'
+  workflow_dispatch:
+    inputs:
+      auto_publish:
+        description: 'Auto-publish directly to Instagram (Autopilot mode)'
+        type: boolean
+        default: true
+
+permissions:
+  contents: write
+
+jobs:
+  decrypt_and_publish:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install Dependencies
+        run: npm ci
+
+      - name: Install Chrome dependencies for Puppeteer
+        run: npx puppeteer browsers install chrome
+
+      - name: Run Daily News Radar & Auto-Publish
+        env:
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          INSTAGRAM_HANDLE: ${{ secrets.INSTAGRAM_HANDLE }}
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+          META_ACCESS_TOKEN: ${{ secrets.META_ACCESS_TOKEN }}
+          INSTAGRAM_ACCOUNT_ID: ${{ secrets.INSTAGRAM_ACCOUNT_ID }}
+          AUTO_PUBLISH: ${{ github.event.inputs.auto_publish || vars.AUTO_PUBLISH }}
+        run: node src/daily_news_trigger.js
+
+      - name: Save News History and Staging
+        if: always()
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          git add news_history.json output/cloud_staged.json autopilot.json || true
+          git commit -m "chore: record news history and staging [skip ci]" || echo "No changes to commit"
+          git push || echo "Push skipped"

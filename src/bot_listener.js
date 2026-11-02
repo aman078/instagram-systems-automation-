@@ -7,6 +7,8 @@ import { TelegramNotifier } from './telegram.js';
 import { InstagramPublisher, uploadToPublicCDN } from './publisher.js';
 import { generateCarouselData } from './generator.js';
 import { renderCarousel } from './renderer.js';
+import { generateNewsCarouselData } from './news_generator.js';
+import { renderNewsCarousel } from './news_renderer.js';
 
 dotenv.config();
 
@@ -33,7 +35,6 @@ function setAutopilotState(enabled) {
   };
   fs.writeFileSync(configPath, JSON.stringify(data, null, 2), 'utf8');
 
-  // Push to GitHub so the cloud runner picks it up immediately
   try {
     const repoDir = path.join(__dirname, '..');
     execSync('git add autopilot.json', { cwd: repoDir });
@@ -60,11 +61,10 @@ async function main() {
   console.log('======================================================\n');
   console.log('Waiting for actions from your Telegram bot...\n');
 
-  // Start listening for inline button taps from your phone
   await telegram.startPolling(async (action, query) => {
     console.log(`\n📲 User triggered action: [${action}]`);
 
-    // 1. Handle Autopilot Switch Toggles
+    // 1. Autopilot Switch Toggles
     if (action === 'toggle_autopilot_on' || action === 'autopilot_command:/autopilot on' || action === 'autopilot_command:autopilot on') {
       setAutopilotState(true);
       await telegram.sendMessage(`🟢 AUTOPILOT ENABLED!\n\nFrom now on, carousels will generate and post directly to Instagram on schedule without needing manual approval.\n\nType /autopilot off anytime to switch back to manual approval.`);
@@ -100,13 +100,12 @@ async function main() {
       return;
     }
 
-    // 2. Handle Manual Approval
+    // 2. Manual Approval & Publishing
     if (action.startsWith('approve_')) {
       const folderName = action.replace('approve_', '');
       const outputDir = path.join(__dirname, '..', 'output', folderName);
       const captionPath = path.join(outputDir, 'caption.txt');
 
-      // 1. Check local cloud_staged.json
       const cloudStagingPath = path.join(__dirname, '..', 'output', 'cloud_staged.json');
       let cloudRecord = null;
       if (fs.existsSync(cloudStagingPath)) {
@@ -116,7 +115,6 @@ async function main() {
         } catch(e) {}
       }
 
-      // 2. If not found locally, fetch latest from GitHub repo directly
       if (!cloudRecord) {
         try {
           const rawUrl = 'https://raw.githubusercontent.com/aman078/instagram-systems-automation-/main/output/cloud_staged.json';
@@ -164,7 +162,71 @@ async function main() {
         console.error('Publish error:', err);
         await telegram.sendMessage(`⚠️ Failed to publish to Instagram: ${err.message}`);
       }
-    } else if (action === 'regenerate' || action === 'generate_command') {
+    } 
+    // 3. News Breakdown Command /news
+    else if (action === 'regenerate_news' || action === 'news_command') {
+      await telegram.sendMessage('📡 Scanning global intelligence radar with Gemini and rendering breakdown...');
+
+      try {
+        const carouselData = await generateNewsCarouselData();
+        const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
+        const safeTitle = carouselData.topic.toLowerCase().replace(/[^a-z0-9]+/g, '-').slice(0, 30);
+        const manifestKey = `news_${timestamp}_${safeTitle}`;
+        const outputDir = path.join(__dirname, '..', 'output', manifestKey);
+
+        const files = await renderNewsCarousel(carouselData, outputDir);
+
+        const cdnUrls = [];
+        for (const f of files) {
+          const url = await uploadToPublicCDN(f);
+          cdnUrls.push(url);
+        }
+
+        const cloudStagingPath = path.join(__dirname, '..', 'output', 'cloud_staged.json');
+        let db = {};
+        if (fs.existsSync(cloudStagingPath)) {
+          try { db = JSON.parse(fs.readFileSync(cloudStagingPath, 'utf8')); } catch(e) {}
+        }
+        db[manifestKey] = {
+          topic: carouselData.topic,
+          caption: carouselData.caption,
+          cdnUrls: cdnUrls,
+          timestamp: new Date().toISOString(),
+          isNews: true
+        };
+        fs.mkdirSync(path.dirname(cloudStagingPath), { recursive: true });
+        fs.writeFileSync(cloudStagingPath, JSON.stringify(db, null, 2), 'utf8');
+
+        await telegram.sendCarouselPreview(files, carouselData.caption, `📡 NEWS: ${carouselData.topic}`, manifestKey, cdnUrls);
+
+        const keyboard = {
+          inline_keyboard: [
+            [
+              { text: '✅ Approve & Publish', callback_data: `approve_${manifestKey}` },
+              { text: '🔄 Regenerate', callback_data: 'regenerate_news' }
+            ],
+            [
+              { text: '🗑️ Discard Draft', callback_data: 'discard' }
+            ]
+          ]
+        };
+
+        await fetch(`https://api.telegram.org/bot${process.env.TELEGRAM_BOT_TOKEN}/sendMessage`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            chat_id: process.env.TELEGRAM_CHAT_ID,
+            text: `⚡ Action Required: Click below to publish news breakdown [${carouselData.topic}] to Instagram:`,
+            reply_markup: keyboard
+          })
+        });
+      } catch (err) {
+        console.error('News generation error:', err);
+        await telegram.sendMessage(`❌ Error generating news breakdown: ${err.message}`);
+      }
+    }
+    // 4. Classic Systems Thinking Command /generate
+    else if (action === 'regenerate' || action === 'generate_command') {
       await telegram.sendMessage('🔄 Cooking a fresh topic with Gemini and rendering slides...');
 
       try {
@@ -176,14 +238,12 @@ async function main() {
 
         const files = await renderCarousel(carouselData, outputDir);
 
-        // Stage to CDN
         const cdnUrls = [];
         for (const f of files) {
           const url = await uploadToPublicCDN(f);
           cdnUrls.push(url);
         }
 
-        // Save to cloud_staged.json
         const cloudStagingPath = path.join(__dirname, '..', 'output', 'cloud_staged.json');
         let db = {};
         if (fs.existsSync(cloudStagingPath)) {
@@ -198,10 +258,8 @@ async function main() {
         fs.mkdirSync(path.dirname(cloudStagingPath), { recursive: true });
         fs.writeFileSync(cloudStagingPath, JSON.stringify(db, null, 2), 'utf8');
 
-        // Dispatch preview
         await telegram.sendCarouselPreview(files, carouselData.caption, carouselData.topic, manifestKey, cdnUrls);
 
-        // Send action buttons
         const keyboard = {
           inline_keyboard: [
             [

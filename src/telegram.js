@@ -48,7 +48,6 @@ export class TelegramNotifier {
 
     console.log(`📱 Pushing carousel preview to Telegram...`);
 
-    // Prepare multipart form data for Telegram sendMediaGroup
     const formData = new FormData();
     const mediaArray = [];
 
@@ -75,7 +74,6 @@ export class TelegramNotifier {
     formData.append('chat_id', this.chatId);
     formData.append('media', JSON.stringify(mediaArray));
 
-    // Send album
     const albumRes = await fetch(`${this.apiUrl}/sendMediaGroup`, {
       method: 'POST',
       body: formData
@@ -86,15 +84,15 @@ export class TelegramNotifier {
       throw new Error(`Failed to send Telegram media group: ${JSON.stringify(albumData)}`);
     }
 
-    // Follow up immediately with caption text
     const cleanCaption = (captionText || '').slice(0, 1000);
     const captionMsg = `Post Caption & Hashtags:\n\n${cleanCaption}\n\nReview complete. Click an option below:`;
 
+    const isNews = folderName.startsWith('news_');
     const keyboard = {
       inline_keyboard: [
         [
           { text: '✅ Approve & Publish', callback_data: `approve_${folderName || 'draft'}` },
-          { text: '🔄 Regenerate', callback_data: 'regenerate' }
+          { text: '🔄 Regenerate', callback_data: isNews ? 'regenerate_news' : 'regenerate' }
         ],
         [
           { text: '🗑️ Discard Draft', callback_data: 'discard' }
@@ -141,7 +139,6 @@ export class TelegramNotifier {
               const action = query.data;
               console.log(`\n⚡ Received action from Telegram: ${action}`);
 
-              // Acknowledge the button press
               await fetch(`${this.apiUrl}/answerCallbackQuery`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -160,6 +157,8 @@ export class TelegramNotifier {
               const lower = text.toLowerCase();
               if (lower === '/generate' || lower === 'generate') {
                 if (onAction) await onAction('generate_command', update.message);
+              } else if (lower === '/news' || lower === 'news') {
+                if (onAction) await onAction('news_command', update.message);
               } else if (lower.startsWith('/autopilot') || lower.startsWith('autopilot')) {
                 if (onAction) await onAction(`autopilot_command:${text}`, update.message);
               }
