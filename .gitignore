@@ -1,4 +1,5 @@
 node_modules/
-output/
+output/*
+!output/cloud_staged.json
 logs/
 .env
