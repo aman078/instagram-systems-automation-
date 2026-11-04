@@ -68,7 +68,7 @@ Instagram Caption:
 - 4-5 bullet summary explaining the Micro ➔ Macro chain.
 - 1 provocative discussion question.
 - Call to action: "Save this post to sharpen your global systems lens."
-- 8-10 high-reach tags: #SystemsThinking #GlobalEconomy #Geopolitics #SupplyChain #MacroEconomics #BusinessStrategy #FutureTrends #SecondOrderThinking
+- 3-5 unique, specific hashtags relevant strictly to this topic (e.g. #SupplyChain #Geopolitics #GlobalEconomy). Never use repetitive generic hashtag blocks.
 
 Output MUST be strictly valid JSON matching this schema:
 {

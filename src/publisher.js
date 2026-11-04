@@ -1,7 +1,14 @@
 import fs from 'fs';
 import path from 'path';
+import { fileURLToPath } from 'url';
 import dotenv from 'dotenv';
 dotenv.config();
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+const LOG_FILE = path.join(__dirname, '..', 'publish_log.json');
+const MIN_POST_INTERVAL_MS = 6 * 60 * 60 * 1000; // 6 hours safety cooldown
 
 /**
  * Upload local slide to verified CDN (freeimage.host / iili.io)
@@ -27,7 +34,7 @@ export async function uploadToPublicCDN(filePath) {
 
 /**
  * Official Meta Instagram Graph API Publisher
- * 100% compliant with Instagram Developer Policies (Zero-risk)
+ * With automatic anti-spam cooldown protection & rate pacing
  */
 export class InstagramPublisher {
   constructor() {
@@ -42,7 +49,46 @@ export class InstagramPublisher {
   }
 
   /**
-   * Upload an individual slide item container
+   * Check if minimum 6 hours have passed since the last post to protect account health
+   */
+  checkCooldown() {
+    if (!fs.existsSync(LOG_FILE)) return { ok: true };
+    try {
+      const logs = JSON.parse(fs.readFileSync(LOG_FILE, 'utf8'));
+      if (Array.isArray(logs) && logs.length > 0) {
+        const lastEntry = logs[logs.length - 1];
+        const lastTime = new Date(lastEntry.timestamp).getTime();
+        const elapsed = Date.now() - lastTime;
+        if (elapsed < MIN_POST_INTERVAL_MS) {
+          const remainingMinutes = Math.round((MIN_POST_INTERVAL_MS - elapsed) / 60000);
+          const hoursAgo = (elapsed / 3600000).toFixed(1);
+          return {
+            ok: false,
+            message: `COOLDOWN_ACTIVE: Previous post was published ${hoursAgo}h ago. Safety cooldown active (${remainingMinutes} mins remaining) to prevent Instagram spam restriction.`
+          };
+        }
+      }
+    } catch(e) {}
+    return { ok: true };
+  }
+
+  recordPublishSuccess(postId, metadata = {}) {
+    let logs = [];
+    if (fs.existsSync(LOG_FILE)) {
+      try { logs = JSON.parse(fs.readFileSync(LOG_FILE, 'utf8')); } catch(e) {}
+    }
+    logs.push({
+      postId,
+      timestamp: new Date().toISOString(),
+      ...metadata
+    });
+    // Keep last 50 entries
+    if (logs.length > 50) logs = logs.slice(-50);
+    fs.writeFileSync(LOG_FILE, JSON.stringify(logs, null, 2), 'utf8');
+  }
+
+  /**
+   * Upload an individual slide item container with 2s pace delay
    */
   async createItemContainer(imageUrl) {
     const url = `${this.baseUrl}/${this.accountId}/media`;
@@ -65,17 +111,27 @@ export class InstagramPublisher {
   /**
    * Publish a complete multi-slide carousel using already staged CDN urls
    */
-  async publishFromUrls(publicUrls, caption) {
+  async publishFromUrls(publicUrls, caption, options = {}) {
     if (!this.isConfigured()) {
       return { simulated: true };
     }
 
-    console.log(`📦 Creating Meta carousel item containers for ${publicUrls.length} slides...`);
+    // Safety Cooldown Check (unless force flag passed)
+    if (!options.force) {
+      const cooldown = this.checkCooldown();
+      if (!cooldown.ok) {
+        throw new Error(cooldown.message);
+      }
+    }
+
+    console.log(`📦 Creating Meta carousel item containers for ${publicUrls.length} slides with safety pacing...`);
     const itemIds = [];
     for (const url of publicUrls) {
       const itemId = await this.createItemContainer(url);
       itemIds.push(itemId);
       console.log(`   Container created: ${itemId}`);
+      // Pace each slide creation by 1.5 seconds to prevent rate spikes
+      await new Promise(r => setTimeout(r, 1500));
     }
 
     const carouselUrl = `${this.baseUrl}/${this.accountId}/media`;
@@ -94,10 +150,10 @@ export class InstagramPublisher {
     }
 
     const creationId = carouselData.id;
-    console.log(`📦 Master Carousel Container Created: ${creationId}`);
+    console.log(`Master Carousel Container Created: ${creationId}`);
 
-    // Wait 3 seconds for Meta media processing
-    await new Promise(r => setTimeout(r, 3000));
+    // Wait 4 seconds for Meta media transcode
+    await new Promise(r => setTimeout(r, 4000));
 
     const publishUrl = `${this.baseUrl}/${this.accountId}/media_publish`;
     const publishParams = new URLSearchParams({
@@ -113,17 +169,18 @@ export class InstagramPublisher {
     }
 
     console.log(`🎉 POST PUBLISHED LIVE ON INSTAGRAM! Post ID: ${publishData.id}`);
+    this.recordPublishSuccess(publishData.id, { slidesCount: publicUrls.length });
     return { success: true, postId: publishData.id };
   }
 
   /**
    * Publish a complete multi-slide carousel from local paths
    */
-  async publishCarousel(localImagePaths, caption) {
+  async publishCarousel(localImagePaths, caption, options = {}) {
     const publicUrls = [];
     for (const p of localImagePaths) {
       publicUrls.push(await uploadToPublicCDN(p));
     }
-    return this.publishFromUrls(publicUrls, caption);
+    return this.publishFromUrls(publicUrls, caption, options);
   }
 }

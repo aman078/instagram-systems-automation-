@@ -92,6 +92,17 @@ async function runDailyNewsPost() {
         }
       } catch (pubErr) {
         console.error('⚠️ Direct publish error:', pubErr.message);
+        if (pubErr.message.includes('COOLDOWN_ACTIVE')) {
+          console.log('Safety cooldown active: Spacing news post for later window.');
+          await fetch(`https://api.telegram.org/bot${process.env.TELEGRAM_BOT_TOKEN}/sendMessage`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              chat_id: process.env.TELEGRAM_CHAT_ID,
+              text: `⏳ [Safety Pacing Active] Decrypted news [${carouselData.topic}].\n\nDirect publishing paused: ${pubErr.message}\n\nDraft is staged safely and will post in the next window without risking an Instagram spam flag.`
+            })
+          });
+        }
       }
     }
 

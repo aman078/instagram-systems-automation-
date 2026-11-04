@@ -108,17 +108,28 @@ async function runScheduledPost() {
         }
       } catch (pubErr) {
         console.error('⚠️ Autopilot direct publish encountered error:', pubErr.message);
-        console.log('Falling back to Telegram manual approval message...');
 
-        // Notify Aman of the issue so he knows why it fell back
-        await fetch(`https://api.telegram.org/bot${process.env.TELEGRAM_BOT_TOKEN}/sendMessage`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            chat_id: process.env.TELEGRAM_CHAT_ID,
-            text: `⚠️ [Autopilot Notice] Generated [${carouselData.topic}], but direct Instagram publish encountered an error: ${pubErr.message}\n\nFalling back to manual approval below:`
-          })
-        });
+        if (pubErr.message.includes('COOLDOWN_ACTIVE')) {
+          console.log('Safety cooldown active: Spacing post for later window.');
+          await fetch(`https://api.telegram.org/bot${process.env.TELEGRAM_BOT_TOKEN}/sendMessage`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              chat_id: process.env.TELEGRAM_CHAT_ID,
+              text: `⏳ [Safety Pacing Active] Generated [${carouselData.topic}].\n\nDirect publishing paused: ${pubErr.message}\n\nDraft is staged safely and will post in the next window without risking an Instagram spam flag.`
+            })
+          });
+        } else {
+          console.log('Falling back to Telegram manual approval message...');
+          await fetch(`https://api.telegram.org/bot${process.env.TELEGRAM_BOT_TOKEN}/sendMessage`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              chat_id: process.env.TELEGRAM_CHAT_ID,
+              text: `⚠️ [Autopilot Notice] Generated [${carouselData.topic}], but direct Instagram publish encountered an error: ${pubErr.message}\n\nFalling back to manual approval below:`
+            })
+          });
+        }
       }
     }
 

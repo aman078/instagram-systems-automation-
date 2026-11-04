@@ -38,7 +38,7 @@ Rules:
    - 4-5 bullet summary using plain conversational English.
    - 1 curiosity question.
    - Call to action: "Save this post for later."
-   - 8-10 clean hashtags.
+   - 3-5 unique, highly relevant hashtags tailored strictly to this specific concept (never repeat generic spam tags).
 
 Output MUST be strictly valid JSON matching this schema:
 {
