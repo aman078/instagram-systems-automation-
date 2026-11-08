@@ -217,5 +217,32 @@
     "timestamp": "2026-11-07T17:55:49.203Z",
     "isNews": true,
     "autopilot": true
+  },
+  "2026-11-08T18-11-58_survivorship-bias": {
+    "topic": "Survivorship Bias",
+    "caption": "Why listening to overnight success stories is a massive trap. \n\n• During WWII, engineers almost armored the wrong parts of bomber planes.\n• They looked only at planes that returned safely.\n• Bullet holes showed where planes could survive getting hit.\n• The planes shot in the engines never made it back to be counted.\n• Success hides its failures; always search for the missing data.\n\nAre you copying advice from the survivors or studying the graveyard?\n\nSave this post for later.\n\n#SurvivorshipBias #SystemsThinking #MentalModels #CriticalThinking #DecisionMaking",
+    "cdnUrls": [
+      "https://iili.io/nb7TwfS.png",
+      "https://iili.io/nb7TN07.png",
+      "https://iili.io/nb7Tv5u.png",
+      "https://iili.io/nb7TSbj.png",
+      "https://iili.io/nb7T4sV.png"
+    ],
+    "timestamp": "2026-11-08T18:12:06.632Z",
+    "autopilot": true
+  },
+  "news_2026-11-08T18-12-00_the-mediterranean-olive-oil-dr": {
+    "topic": "The Mediterranean Olive Oil Drought & Food Fraud",
+    "caption": "Climate change in Spain is turning your kitchen staple into a black-market luxury item.\n\n• Mediterranean droughts slash olive harvests by over 50%.\n• Wholesale prices skyrocket, hitting everyday grocery budgets hard.\n• Organized crime steps in, flooding markets with fake, cut-rate counterfeit olive oil.\n• Global food supply chains scramble for synthetic and alternative cooking fats.\n\nAre you checking your grocery labels, or trusting what you buy blindly?\n\nSave this post to sharpen your global systems lens.\n\n#FoodSecurity #SupplyChain #AgriBusiness #ClimateEconomics #Geopolitics",
+    "cdnUrls": [
+      "https://iili.io/nb7T8Ob.png",
+      "https://iili.io/nb7Tgzx.png",
+      "https://iili.io/nb7TPqB.png",
+      "https://iili.io/nb7Ti0P.png",
+      "https://iili.io/nb7Tsg1.png"
+    ],
+    "timestamp": "2026-11-08T18:12:09.575Z",
+    "isNews": true,
+    "autopilot": true
   }
 }
