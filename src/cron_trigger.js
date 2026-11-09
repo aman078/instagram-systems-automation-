@@ -6,6 +6,7 @@ import { generateCarouselData } from './generator.js';
 import { renderCarousel } from './renderer.js';
 import { TelegramNotifier } from './telegram.js';
 import { uploadToPublicCDN, InstagramPublisher } from './publisher.js';
+import { buildReelFromSlides } from './reel_renderer.js';
 
 dotenv.config();
 
@@ -54,6 +55,13 @@ async function runScheduledPost() {
 
     console.log(`🎨 Rendering slides to: ${outputDir}`);
     const files = await renderCarousel(carouselData, outputDir);
+
+    // 2b. Render 5.5-second vertical looping Reel (1080x1920) for Explore & Reels discovery
+    try {
+      await buildReelFromSlides(outputDir, false);
+    } catch (reelErr) {
+      console.warn('⚠️ Reel generation skipped:', reelErr.message);
+    }
 
     // 3. Stage slides immediately to public CDN
     console.log('☁️ Staging slides to CDN...');

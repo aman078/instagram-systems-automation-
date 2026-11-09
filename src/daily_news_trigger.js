@@ -7,6 +7,7 @@ import { renderNewsCarousel } from './news_renderer.js';
 import { TelegramNotifier } from './telegram.js';
 import { uploadToPublicCDN, InstagramPublisher } from './publisher.js';
 import { isAutopilotEnabled } from './cron_trigger.js';
+import { buildReelFromSlides } from './reel_renderer.js';
 
 dotenv.config();
 
@@ -41,6 +42,13 @@ async function runDailyNewsPost() {
 
     console.log(`🎨 Rendering news slides to: ${outputDir}`);
     const files = await renderNewsCarousel(carouselData, outputDir);
+
+    // 2b. Render 5.5-second vertical looping Reel (1080x1920) for Explore & Reels discovery
+    try {
+      await buildReelFromSlides(outputDir, true);
+    } catch (reelErr) {
+      console.warn('⚠️ Reel generation skipped:', reelErr.message);
+    }
 
     // 3. Stage slides to CDN
     console.log('☁️ Staging news slides to CDN...');

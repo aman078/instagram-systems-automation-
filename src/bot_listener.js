@@ -9,6 +9,8 @@ import { generateCarouselData } from './generator.js';
 import { renderCarousel } from './renderer.js';
 import { generateNewsCarouselData } from './news_generator.js';
 import { renderNewsCarousel } from './news_renderer.js';
+import { buildReelFromSlides } from './reel_renderer.js';
+import { generateCommentRadar, formatRadarTelegramMessage } from './comment_radar.js';
 
 dotenv.config();
 
@@ -162,6 +164,86 @@ async function main() {
         console.error('Publish error:', err);
         await telegram.sendMessage(`⚠️ Failed to publish to Instagram: ${err.message}`);
       }
+    }
+    // 2b. Manual Reel Publishing (Viral Reach)
+    else if (action.startsWith('reel_')) {
+      const folderName = action.replace('reel_', '');
+      const outputDir = path.join(__dirname, '..', 'output', folderName);
+      const isNews = folderName.startsWith('news_');
+
+      await telegram.sendMessage(`🎬 Preparing 5.5s viral looping Reel for: ${folderName}...`);
+
+      try {
+        const reelPath = path.join(outputDir, 'reel.mp4');
+        if (!fs.existsSync(reelPath)) {
+          await telegram.sendMessage('⚙️ Compiling 1080x1920 MP4 with Ken Burns zoom & synth soundtrack...');
+          await buildReelFromSlides(outputDir, isNews);
+        }
+
+        await telegram.sendMessage('☁️ Syncing video asset to public CDN edge...');
+        try {
+          const repoDir = path.join(__dirname, '..');
+          execSync(`git add output/${folderName}/*.png output/${folderName}/reel.mp4`, { cwd: repoDir });
+          execSync(`git commit -m "feat: staged reel for ${folderName} [skip ci]"`, { cwd: repoDir });
+          execSync(`git push origin main`, { cwd: repoDir });
+        } catch (gitErr) {
+          console.log('Git sync note:', gitErr.message);
+        }
+
+        const videoUrl = `https://raw.githubusercontent.com/aman078/instagram-systems-automation-/main/output/${folderName}/reel.mp4`;
+
+        let caption = '';
+        const captionPath = path.join(outputDir, 'caption.txt');
+        if (fs.existsSync(captionPath)) {
+          caption = fs.readFileSync(captionPath, 'utf8');
+        } else {
+          const cloudStagingPath = path.join(__dirname, '..', 'output', 'cloud_staged.json');
+          if (fs.existsSync(cloudStagingPath)) {
+            try {
+              const db = JSON.parse(fs.readFileSync(cloudStagingPath, 'utf8'));
+              caption = db[folderName]?.caption || '';
+            } catch (e) {}
+          }
+        }
+
+        await telegram.sendMessage('🚀 Publishing Reel to Meta Graph API and awaiting transcode (15-30s)...');
+        const result = await publisher.publishReel(videoUrl, caption);
+
+        if (result.success) {
+          await telegram.sendMessage(`🎉 REEL IS LIVE ON INSTAGRAM!\n\n🆔 Post ID: ${result.postId}\n🔗 Handle: @systems.thinking.lab\n\n(Reel has been pushed into the Reels & Explore algorithm for non-followers!)`);
+        } else if (result.simulated) {
+          await telegram.sendMessage('✅ Reel approval simulated!');
+        }
+      } catch (err) {
+        console.error('Reel publish error:', err);
+        await telegram.sendMessage(`⚠️ Failed to publish Reel: ${err.message}`);
+      }
+    }
+    // 3. AI Comment Radar Command /radar (Top-20 Parasite Strategy)
+    else if (action === 'radar_command') {
+      await telegram.sendMessage('📡 Scanning top 20 creators with Gemini & drafting golden comments...');
+      try {
+        const radarItems = await generateCommentRadar(3);
+        const htmlMsg = formatRadarTelegramMessage(radarItems);
+        await telegram.sendMessage(htmlMsg, {
+          parse_mode: 'HTML',
+          disable_web_page_preview: true
+        });
+      } catch (err) {
+        console.error('Radar error:', err);
+        await telegram.sendMessage(`❌ Error generating Comment Radar: ${err.message}`);
+      }
+    }
+    // 4. Help & Command Manual /help
+    else if (action === 'help_command') {
+      const helpMsg = `🤖 <b>@systems.thinking.lab Command Center</b>\n\n` +
+        `📡 <b>/radar</b> — AI Comment Radar (Top-20 Parasite Strategy with 1-tap copy)\n` +
+        `🎬 <b>/reel</b> — Generate fresh viral 5.5s looping vertical Reel\n` +
+        `🔄 <b>/generate</b> — Cook a fresh systems thinking carousel draft\n` +
+        `🌍 <b>/news</b> — Scan global intelligence & render news breakdown\n` +
+        `⚙️ <b>/autopilot</b> — View or toggle auto-publishing on/off\n` +
+        `❓ <b>/help</b> — Show this command manual`;
+      await telegram.sendMessage(helpMsg, { parse_mode: 'HTML' });
     } 
     // 3. News Breakdown Command /news
     else if (action === 'regenerate_news' || action === 'news_command') {
@@ -175,6 +257,13 @@ async function main() {
         const outputDir = path.join(__dirname, '..', 'output', manifestKey);
 
         const files = await renderNewsCarousel(carouselData, outputDir);
+
+        // Pre-compile 5.5s vertical looping Reel (1080x1920)
+        try {
+          await buildReelFromSlides(outputDir, true);
+        } catch (reelErr) {
+          console.warn('⚠️ Reel build note:', reelErr.message);
+        }
 
         const cdnUrls = [];
         for (const f of files) {
@@ -202,10 +291,11 @@ async function main() {
         const keyboard = {
           inline_keyboard: [
             [
-              { text: '✅ Approve & Publish', callback_data: `approve_${manifestKey}` },
-              { text: '🔄 Regenerate', callback_data: 'regenerate_news' }
+              { text: '🎬 Post as Reel (Viral Reach)', callback_data: `reel_${manifestKey}` },
+              { text: '📑 Post Carousel', callback_data: `approve_${manifestKey}` }
             ],
             [
+              { text: '🔄 Regenerate', callback_data: 'regenerate_news' },
               { text: '🗑️ Discard Draft', callback_data: 'discard' }
             ]
           ]
@@ -225,8 +315,8 @@ async function main() {
         await telegram.sendMessage(`❌ Error generating news breakdown: ${err.message}`);
       }
     }
-    // 4. Classic Systems Thinking Command /generate
-    else if (action === 'regenerate' || action === 'generate_command') {
+    // 5. Classic Systems Thinking Command /generate or /reel
+    else if (action === 'regenerate' || action === 'generate_command' || action === 'reel_command') {
       await telegram.sendMessage('🔄 Cooking a fresh topic with Gemini and rendering slides...');
 
       try {
@@ -237,6 +327,13 @@ async function main() {
         const outputDir = path.join(__dirname, '..', 'output', manifestKey);
 
         const files = await renderCarousel(carouselData, outputDir);
+
+        // Pre-compile 5.5s vertical looping Reel (1080x1920)
+        try {
+          await buildReelFromSlides(outputDir, false);
+        } catch (reelErr) {
+          console.warn('⚠️ Reel build note:', reelErr.message);
+        }
 
         const cdnUrls = [];
         for (const f of files) {
@@ -263,10 +360,11 @@ async function main() {
         const keyboard = {
           inline_keyboard: [
             [
-              { text: '✅ Approve & Publish', callback_data: `approve_${manifestKey}` },
-              { text: '🔄 Regenerate', callback_data: 'regenerate' }
+              { text: '🎬 Post as Reel (Viral Reach)', callback_data: `reel_${manifestKey}` },
+              { text: '📑 Post Carousel', callback_data: `approve_${manifestKey}` }
             ],
             [
+              { text: '🔄 Regenerate', callback_data: 'regenerate' },
               { text: '🗑️ Discard Draft', callback_data: 'discard' }
             ]
           ]

@@ -183,4 +183,92 @@ export class InstagramPublisher {
     }
     return this.publishFromUrls(publicUrls, caption, options);
   }
+
+  /**
+   * Publish an Instagram Reel video from a publicly accessible HTTPS MP4 URL
+   * Handles asynchronous Meta video transcode polling and feed distribution.
+   */
+  async publishReel(videoUrl, caption, options = {}) {
+    if (!this.isConfigured()) {
+      return { simulated: true, type: 'REEL' };
+    }
+
+    // Safety Cooldown Check (unless force flag passed)
+    if (!options.force) {
+      const cooldown = this.checkCooldown();
+      if (!cooldown.ok) {
+        throw new Error(cooldown.message);
+      }
+    }
+
+    console.log(`🎬 Creating Meta Reel container for video: ${videoUrl}`);
+    const reelUrl = `${this.baseUrl}/${this.accountId}/media`;
+    const reelParams = new URLSearchParams({
+      media_type: 'REELS',
+      video_url: videoUrl,
+      caption: caption,
+      share_to_feed: 'true',
+      access_token: this.accessToken
+    });
+
+    const res = await fetch(`${reelUrl}?${reelParams.toString()}`, { method: 'POST' });
+    const data = await res.json();
+
+    if (!data.id) {
+      throw new Error(`Failed to create reel container: ${JSON.stringify(data)}`);
+    }
+
+    const containerId = data.id;
+    console.log(`🎬 Reel container created: ${containerId}. Awaiting Meta video transcode...`);
+
+    // Poll status until transcode is complete
+    let isReady = false;
+    let attempts = 0;
+    const maxAttempts = 30; // 30 * 5s = 2.5 minutes max wait
+
+    while (!isReady && attempts < maxAttempts) {
+      await new Promise(r => setTimeout(r, 5000));
+      attempts++;
+
+      const checkUrl = `${this.baseUrl}/${containerId}?fields=status_code,status&access_token=${this.accessToken}`;
+      const checkRes = await fetch(checkUrl);
+      const checkData = await checkRes.json();
+
+      const statusCode = checkData.status_code || checkData.status || 'UNKNOWN';
+      console.log(`   Transcode poll [${attempts}/${maxAttempts}]: ${statusCode}`);
+
+      if (statusCode === 'FINISHED') {
+        isReady = true;
+        break;
+      }
+      if (statusCode === 'ERROR') {
+        throw new Error(`Meta video processing failed: ${JSON.stringify(checkData)}`);
+      }
+      if (statusCode === 'EXPIRED') {
+        throw new Error(`Meta reel container expired: ${JSON.stringify(checkData)}`);
+      }
+    }
+
+    if (!isReady) {
+      throw new Error('Meta video processing timed out after 2.5 minutes.');
+    }
+
+    console.log(`🚀 Publishing Reel ${containerId} live to Instagram feed & reels tab...`);
+    const publishUrl = `${this.baseUrl}/${this.accountId}/media_publish`;
+    const publishParams = new URLSearchParams({
+      creation_id: containerId,
+      access_token: this.accessToken
+    });
+
+    const pubRes = await fetch(`${publishUrl}?${publishParams.toString()}`, { method: 'POST' });
+    const pubData = await pubRes.json();
+
+    if (!pubData.id) {
+      throw new Error(`Failed to publish reel: ${JSON.stringify(pubData)}`);
+    }
+
+    console.log(`🎉 REEL IS LIVE ON INSTAGRAM! Post ID: ${pubData.id}`);
+    this.recordPublishSuccess(pubData.id, { type: 'REEL' });
+    return { success: true, postId: pubData.id, type: 'REEL' };
+  }
 }

@@ -91,10 +91,11 @@ export class TelegramNotifier {
     const keyboard = {
       inline_keyboard: [
         [
-          { text: '✅ Approve & Publish', callback_data: `approve_${folderName || 'draft'}` },
-          { text: '🔄 Regenerate', callback_data: isNews ? 'regenerate_news' : 'regenerate' }
+          { text: '🎬 Post as Reel (Viral Reach)', callback_data: `reel_${folderName || 'draft'}` },
+          { text: '📑 Post Carousel', callback_data: `approve_${folderName || 'draft'}` }
         ],
         [
+          { text: '🔄 Regenerate', callback_data: isNews ? 'regenerate_news' : 'regenerate' },
           { text: '🗑️ Discard Draft', callback_data: 'discard' }
         ]
       ]
@@ -159,6 +160,12 @@ export class TelegramNotifier {
                 if (onAction) await onAction('generate_command', update.message);
               } else if (lower === '/news' || lower === 'news') {
                 if (onAction) await onAction('news_command', update.message);
+              } else if (lower === '/radar' || lower === 'radar') {
+                if (onAction) await onAction('radar_command', update.message);
+              } else if (lower.startsWith('/reel') || lower.startsWith('reel')) {
+                if (onAction) await onAction('reel_command', update.message);
+              } else if (lower === '/help' || lower === 'help' || lower === '/start') {
+                if (onAction) await onAction('help_command', update.message);
               } else if (lower.startsWith('/autopilot') || lower.startsWith('autopilot')) {
                 if (onAction) await onAction(`autopilot_command:${text}`, update.message);
               }
