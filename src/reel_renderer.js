@@ -57,8 +57,8 @@ export async function buildReelFromSlides(folderPath, isNews = false) {
     `[v0][v1]xfade=transition=fade:duration=0.5:offset=2.5[v]`
   ].join('; ');
 
-  // Ambient synth pulse (44.1kHz stereo, 5.5s)
-  const audioFilter = `aevalsrc=0.08*sin(2*PI*110*t)*exp(-3*mod(t\\,1.333))+0.05*sin(2*PI*220*t)*exp(-4*mod(t\\,0.666)):s=44100:d=5.5`;
+  // Ambient synth pulse (48kHz stereo, 5.5s)
+  const audioFilter = `aevalsrc=0.08*sin(2*PI*110*t)*exp(-3*mod(t\\,1.333))+0.05*sin(2*PI*220*t)*exp(-4*mod(t\\,0.666)):s=48000:d=5.5:c=stereo`;
 
   const args = [
     `"${ffmpeg}"`,
@@ -69,9 +69,11 @@ export async function buildReelFromSlides(folderPath, isNews = false) {
     `-map "[v]"`,
     `-map 2:a`,
     `-c:v libx264`,
+    `-profile:v high -level 4.1`,
     `-pix_fmt yuv420p`,
     `-preset fast`,
-    `-c:a aac -b:a 128k`,
+    `-c:a aac -b:a 128k -ar 48000 -ac 2`,
+    `-movflags +faststart`,
     `-r 30`,
     `-shortest`,
     `-y "${outMp4}"`
@@ -88,3 +90,4 @@ export async function buildReelFromSlides(folderPath, isNews = false) {
   console.log(`✅ [ReelRenderer] Reel generated successfully: ${outMp4} (${sizeKb} KB)`);
   return outMp4;
 }
+

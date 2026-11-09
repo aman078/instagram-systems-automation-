@@ -1,5 +1,6 @@
 node_modules/
 output/*
 !output/cloud_staged.json
+!output/*/reel.mp4
 logs/
 .env
