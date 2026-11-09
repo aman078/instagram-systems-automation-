@@ -87,14 +87,15 @@ async function runScheduledPost() {
     fs.mkdirSync(path.dirname(cloudStagingPath), { recursive: true });
     fs.writeFileSync(cloudStagingPath, JSON.stringify(db, null, 2), 'utf8');
 
-    // 4. If AUTOPILOT is ON, publish directly to Instagram!
+    // 4. If AUTOPILOT is ON, publish directly to Instagram as a REEL!
     if (autopilot) {
-      console.log('🚀 Autopilot active: Publishing directly to Instagram without waiting for approval...');
+      console.log('🚀 Autopilot active: Publishing REEL directly to Instagram via rupload binary stream...');
       try {
-        const result = await publisher.publishFromUrls(cdnUrls, carouselData.caption);
+        const reelPath = path.join(outputDir, 'reel.mp4');
+        const result = await publisher.publishReel(reelPath, carouselData.caption);
 
         if (result.success) {
-          console.log(`🎉 Autopilot successfully published to Instagram! Post ID: ${result.postId}`);
+          console.log(`🎉 Autopilot successfully published REEL to Instagram! Post ID: ${result.postId}`);
 
           // Send preview album to Telegram so Aman sees what was posted
           await telegram.sendCarouselPreview(files, carouselData.caption, carouselData.topic, manifestKey, cdnUrls);
@@ -105,7 +106,7 @@ async function runScheduledPost() {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
               chat_id: process.env.TELEGRAM_CHAT_ID,
-              text: `🎉 [AUTOPILOT LIVE] Post is LIVE on Instagram!\n\n📌 Topic: ${carouselData.topic}\n🆔 Post ID: ${result.postId}\n🔗 Handle: @systems.thinking.lab\n\n(Autopilot mode is ON: Post was generated and published automatically without waiting for approval).`
+              text: `🎉 [AUTOPILOT LIVE] 🎬 Viral Reel is LIVE on Instagram!\n\n📌 Topic: ${carouselData.topic}\n🆔 Post ID: ${result.postId}\n🔗 Handle: @systems.thinking.lab\n\n(Autopilot mode is ON: 5.5s looping Reel was generated and published automatically from GitHub Actions cloud).`
             })
           });
 
