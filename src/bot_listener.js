@@ -165,8 +165,8 @@ async function main() {
         await telegram.sendMessage(`⚠️ Failed to publish to Instagram: ${err.message}`);
       }
     }
-    // 2b. Manual Reel Publishing (Viral Reach)
-    else if (action.startsWith('reel_')) {
+    // 2b. Manual Reel Publishing (Viral Reach Button Callback)
+    else if (action.startsWith('reel_') && !action.includes('command') && !action.includes('cmd')) {
       const folderName = action.replace('reel_', '');
       const outputDir = path.join(__dirname, '..', 'output', folderName);
       const isNews = folderName.startsWith('news_');
@@ -220,7 +220,7 @@ async function main() {
       }
     }
     // 3. AI Comment Radar Command /radar (Top-20 Parasite Strategy)
-    else if (action === 'radar_command') {
+    else if (action === 'cmd_radar' || action === 'radar_command') {
       await telegram.sendMessage('📡 Scanning top 20 creators with Gemini & drafting golden comments...');
       try {
         const radarItems = await generateCommentRadar(3);
@@ -235,7 +235,7 @@ async function main() {
       }
     }
     // 4. Help & Command Manual /help
-    else if (action === 'help_command') {
+    else if (action === 'cmd_help' || action === 'help_command') {
       const helpMsg = `🤖 <b>@systems.thinking.lab Command Center</b>\n\n` +
         `📡 <b>/radar</b> — AI Comment Radar (Top-20 Parasite Strategy with 1-tap copy)\n` +
         `🎬 <b>/reel</b> — Generate fresh viral 5.5s looping vertical Reel\n` +
@@ -245,8 +245,8 @@ async function main() {
         `❓ <b>/help</b> — Show this command manual`;
       await telegram.sendMessage(helpMsg, { parse_mode: 'HTML' });
     } 
-    // 3. News Breakdown Command /news
-    else if (action === 'regenerate_news' || action === 'news_command') {
+    // 5. News Breakdown Command /news
+    else if (action === 'regenerate_news' || action === 'cmd_news' || action === 'news_command') {
       await telegram.sendMessage('📡 Scanning global intelligence radar with Gemini and rendering breakdown...');
 
       try {
@@ -315,9 +315,9 @@ async function main() {
         await telegram.sendMessage(`❌ Error generating news breakdown: ${err.message}`);
       }
     }
-    // 5. Classic Systems Thinking Command /generate or /reel
-    else if (action === 'regenerate' || action === 'generate_command' || action === 'reel_command') {
-      await telegram.sendMessage('🔄 Cooking a fresh topic with Gemini and rendering slides...');
+    // 6. Classic Systems Thinking Command /generate or /reel
+    else if (action === 'regenerate' || action === 'cmd_generate' || action === 'generate_command' || action === 'cmd_reel' || action === 'reel_command') {
+      await telegram.sendMessage('🔄 Cooking a fresh topic with Gemini and compiling both slides & 5.5s Reel...');
 
       try {
         const carouselData = await generateCarouselData();

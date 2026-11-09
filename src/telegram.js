@@ -157,15 +157,15 @@ export class TelegramNotifier {
               console.log(`\n💬 Received text message from user: "${text}"`);
               const lower = text.toLowerCase();
               if (lower === '/generate' || lower === 'generate') {
-                if (onAction) await onAction('generate_command', update.message);
+                if (onAction) await onAction('cmd_generate', update.message);
               } else if (lower === '/news' || lower === 'news') {
-                if (onAction) await onAction('news_command', update.message);
+                if (onAction) await onAction('cmd_news', update.message);
               } else if (lower === '/radar' || lower === 'radar') {
-                if (onAction) await onAction('radar_command', update.message);
+                if (onAction) await onAction('cmd_radar', update.message);
               } else if (lower.startsWith('/reel') || lower.startsWith('reel')) {
-                if (onAction) await onAction('reel_command', update.message);
+                if (onAction) await onAction('cmd_reel', update.message);
               } else if (lower === '/help' || lower === 'help' || lower === '/start') {
-                if (onAction) await onAction('help_command', update.message);
+                if (onAction) await onAction('cmd_help', update.message);
               } else if (lower.startsWith('/autopilot') || lower.startsWith('autopilot')) {
                 if (onAction) await onAction(`autopilot_command:${text}`, update.message);
               }
