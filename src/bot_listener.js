@@ -174,16 +174,14 @@ async function main() {
       await telegram.sendMessage(`🎬 Preparing 5.5s viral looping Reel for: ${folderName}...`);
 
       try {
-        const reelPath = path.join(outputDir, 'reel.mp4');
-        if (!fs.existsSync(reelPath)) {
-          await telegram.sendMessage('⚙️ Compiling 1080x1920 MP4 with Ken Burns zoom & synth soundtrack...');
-          await buildReelFromSlides(outputDir, isNews);
-        }
+        // Always build or refresh reel with strict faststart + 48kHz stereo specs
+        await telegram.sendMessage('⚙️ Compiling 1080x1920 MP4 with Ken Burns zoom, faststart & stereo synth...');
+        await buildReelFromSlides(outputDir, isNews);
 
         await telegram.sendMessage('☁️ Syncing video asset to public CDN edge...');
         try {
           const repoDir = path.join(__dirname, '..');
-          execSync(`git add output/${folderName}/*.png output/${folderName}/reel.mp4`, { cwd: repoDir });
+          execSync(`git add -f "output/${folderName}/reel.mp4"`, { cwd: repoDir });
           execSync(`git commit -m "feat: staged reel for ${folderName} [skip ci]"`, { cwd: repoDir });
           execSync(`git push origin main`, { cwd: repoDir });
         } catch (gitErr) {
@@ -191,6 +189,23 @@ async function main() {
         }
 
         const videoUrl = `https://raw.githubusercontent.com/aman078/instagram-systems-automation-/main/output/${folderName}/reel.mp4`;
+
+        // Verify CDN availability
+        let verified = false;
+        for (let attempt = 1; attempt <= 6; attempt++) {
+          try {
+            const checkRes = await fetch(videoUrl, { method: 'HEAD' });
+            if (checkRes.ok) {
+              verified = true;
+              break;
+            }
+          } catch(e) {}
+          await new Promise(r => setTimeout(r, 2000));
+        }
+
+        if (!verified) {
+          throw new Error(`Video file is not yet reachable at ${videoUrl}`);
+        }
 
         let caption = '';
         const captionPath = path.join(outputDir, 'caption.txt');
