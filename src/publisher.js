@@ -185,10 +185,11 @@ export class InstagramPublisher {
   }
 
   /**
-   * Publish an Instagram Reel video from a publicly accessible HTTPS MP4 URL
-   * Handles asynchronous Meta video transcode polling and feed distribution.
+   * Publish an Instagram Reel video using Direct Resumable Binary Upload (rupload.facebook.com)
+   * or public video_url fallback.
+   * Completely avoids external crawler drops, MIME issues, and error 2207076.
    */
-  async publishReel(videoUrl, caption, options = {}) {
+  async publishReel(videoTarget, caption, options = {}) {
     if (!this.isConfigured()) {
       return { simulated: true, type: 'REEL' };
     }
@@ -201,33 +202,82 @@ export class InstagramPublisher {
       }
     }
 
-    console.log(`🎬 Creating Meta Reel container for video: ${videoUrl}`);
-    const reelUrl = `${this.baseUrl}/${this.accountId}/media`;
-    const reelParams = new URLSearchParams({
-      media_type: 'REELS',
-      video_url: videoUrl,
-      caption: caption,
-      share_to_feed: 'true',
-      access_token: this.accessToken
-    });
+    const isLocalFile = fs.existsSync(videoTarget);
+    let containerId = null;
 
-    const res = await fetch(`${reelUrl}?${reelParams.toString()}`, { method: 'POST' });
-    const data = await res.json();
+    if (isLocalFile) {
+      const fileBuffer = fs.readFileSync(videoTarget);
+      console.log(`🎬 Initializing Direct Resumable Reel container (${fileBuffer.length} bytes)...`);
 
-    if (!data.id) {
-      throw new Error(`Failed to create reel container: ${JSON.stringify(data)}`);
+      // 1. Initialize session on graph.facebook.com
+      const initUrl = `${this.baseUrl}/${this.accountId}/media`;
+      const initRes = await fetch(initUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: new URLSearchParams({
+          upload_type: 'resumable',
+          media_type: 'REELS',
+          caption: caption,
+          share_to_feed: 'true',
+          access_token: this.accessToken
+        })
+      });
+
+      const initData = await initRes.json();
+      if (!initData.id) {
+        throw new Error(`Failed to initialize Reel container: ${JSON.stringify(initData)}`);
+      }
+
+      containerId = initData.id;
+      const uploadUri = initData.uri || `https://rupload.facebook.com/ig-api-upload/${this.apiVersion}/${containerId}`;
+      console.log(`🎬 Reel container created: ${containerId}. Pushing binary directly to Meta edge...`);
+
+      // 2. Upload raw binary directly to Meta's rupload host
+      const uploadRes = await fetch(uploadUri, {
+        method: 'POST',
+        headers: {
+          'Authorization': `OAuth ${this.accessToken}`,
+          'offset': '0',
+          'file_size': String(fileBuffer.length),
+          'Content-Type': 'application/octet-stream'
+        },
+        body: fileBuffer
+      });
+
+      const uploadData = await uploadRes.json();
+      if (!uploadData.success) {
+        throw new Error(`Direct binary upload to rupload failed: ${JSON.stringify(uploadData)}`);
+      }
+
+      console.log(`✅ Binary uploaded successfully to Meta edge (${fileBuffer.length} bytes). Polling transcode...`);
+    } else {
+      console.log(`🎬 Creating Meta Reel container for remote video: ${videoTarget}`);
+      const reelUrl = `${this.baseUrl}/${this.accountId}/media`;
+      const reelParams = new URLSearchParams({
+        media_type: 'REELS',
+        video_url: videoTarget,
+        caption: caption,
+        share_to_feed: 'true',
+        access_token: this.accessToken
+      });
+
+      const res = await fetch(`${reelUrl}?${reelParams.toString()}`, { method: 'POST' });
+      const data = await res.json();
+
+      if (!data.id) {
+        throw new Error(`Failed to create reel container: ${JSON.stringify(data)}`);
+      }
+
+      containerId = data.id;
     }
 
-    const containerId = data.id;
-    console.log(`🎬 Reel container created: ${containerId}. Awaiting Meta video transcode...`);
-
-    // Poll status until transcode is complete
+    // 3. Poll status until transcode is complete
     let isReady = false;
     let attempts = 0;
-    const maxAttempts = 30; // 30 * 5s = 2.5 minutes max wait
+    const maxAttempts = 25;
 
     while (!isReady && attempts < maxAttempts) {
-      await new Promise(r => setTimeout(r, 5000));
+      await new Promise(r => setTimeout(r, 4000));
       attempts++;
 
       const checkUrl = `${this.baseUrl}/${containerId}?fields=status_code,status&access_token=${this.accessToken}`;
@@ -250,7 +300,7 @@ export class InstagramPublisher {
     }
 
     if (!isReady) {
-      throw new Error('Meta video processing timed out after 2.5 minutes.');
+      throw new Error('Meta video processing timed out after waiting.');
     }
 
     console.log(`🚀 Publishing Reel ${containerId} live to Instagram feed & reels tab...`);

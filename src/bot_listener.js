@@ -174,37 +174,10 @@ async function main() {
       await telegram.sendMessage(`🎬 Preparing 5.5s viral looping Reel for: ${folderName}...`);
 
       try {
-        // Always build or refresh reel with strict faststart + 48kHz stereo specs
-        await telegram.sendMessage('⚙️ Compiling 1080x1920 MP4 with Ken Burns zoom, faststart & stereo synth...');
-        await buildReelFromSlides(outputDir, isNews);
-
-        await telegram.sendMessage('☁️ Syncing video asset to public CDN edge...');
-        try {
-          const repoDir = path.join(__dirname, '..');
-          execSync(`git add -f "output/${folderName}/reel.mp4"`, { cwd: repoDir });
-          execSync(`git commit -m "feat: staged reel for ${folderName} [skip ci]"`, { cwd: repoDir });
-          execSync(`git push origin main`, { cwd: repoDir });
-        } catch (gitErr) {
-          console.log('Git sync note:', gitErr.message);
-        }
-
-        const videoUrl = `https://raw.githubusercontent.com/aman078/instagram-systems-automation-/main/output/${folderName}/reel.mp4`;
-
-        // Verify CDN availability
-        let verified = false;
-        for (let attempt = 1; attempt <= 6; attempt++) {
-          try {
-            const checkRes = await fetch(videoUrl, { method: 'HEAD' });
-            if (checkRes.ok) {
-              verified = true;
-              break;
-            }
-          } catch(e) {}
-          await new Promise(r => setTimeout(r, 2000));
-        }
-
-        if (!verified) {
-          throw new Error(`Video file is not yet reachable at ${videoUrl}`);
+        const reelPath = path.join(outputDir, 'reel.mp4');
+        if (!fs.existsSync(reelPath)) {
+          await telegram.sendMessage('⚙️ Compiling 1080x1920 MP4 with Ken Burns zoom, faststart & stereo synth...');
+          await buildReelFromSlides(outputDir, isNews);
         }
 
         let caption = '';
@@ -221,8 +194,16 @@ async function main() {
           }
         }
 
-        await telegram.sendMessage('🚀 Publishing Reel to Meta Graph API and awaiting transcode (15-30s)...');
-        const result = await publisher.publishReel(videoUrl, caption);
+        await telegram.sendMessage('🚀 Uploading Reel directly to Meta edge via rupload & awaiting transcode (5-15s)...');
+        const result = await publisher.publishReel(reelPath, caption);
+
+        // Sync to git in background for record
+        try {
+          const repoDir = path.join(__dirname, '..');
+          execSync(`git add -f "output/${folderName}/reel.mp4"`, { cwd: repoDir });
+          execSync(`git commit -m "feat: staged reel for ${folderName} [skip ci]"`, { cwd: repoDir });
+          execSync(`git push origin main`, { cwd: repoDir });
+        } catch (e) {}
 
         if (result.success) {
           await telegram.sendMessage(`🎉 REEL IS LIVE ON INSTAGRAM!\n\n🆔 Post ID: ${result.postId}\n🔗 Handle: @systems.thinking.lab\n\n(Reel has been pushed into the Reels & Explore algorithm for non-followers!)`);
