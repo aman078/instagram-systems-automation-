@@ -284,5 +284,32 @@
     "timestamp": "2026-11-09T22:50:21.638Z",
     "isNews": true,
     "autopilot": true
+  },
+  "2026-11-10T20-10-27_the-hawthorne-effect": {
+    "topic": "The Hawthorne Effect",
+    "caption": "Why do people suddenly work harder the second the boss walks into the room? 🧐\n\n• The Hawthorne effect proves attention changes behavior instantly.\n• Brighter lights, new rules, and cameras all spark temporary effort.\n• People perform better simply because they feel special and noticed.\n• Temporary novelty often masquerades as permanent system improvement.\n\nAre your employees actually productive, or just performing for the metrics?\n\nSave this post for later.\n\n#HawthorneEffect #SystemsThinking #HumanBehavior #ProductivityTraps #BehavioralPsychology",
+    "cdnUrls": [
+      "https://iili.io/nmOYOwg.png",
+      "https://iili.io/nmOYeta.png",
+      "https://iili.io/nmOYSPR.png",
+      "https://iili.io/nmOYrcN.png",
+      "https://iili.io/nmOY4SI.png"
+    ],
+    "timestamp": "2026-11-10T20:10:36.545Z",
+    "autopilot": true
+  },
+  "news_2026-11-10T20-11-05_the-ai-data-center-power-surge": {
+    "topic": "The AI Data Center Power Surge",
+    "caption": "Big Tech just bought a nuclear power plant. Here is why your electric bill is about to jump.\n\n1️⃣ The Trigger: Microsoft & Amazon are locking up nuclear reactors to feed energy-hungry AI data centers.\n2️⃣ The Micro Hit: Power utilities pass heavy grid upgrade costs directly onto everyday home electric bills.\n3️⃣ The Macro Shock: Tech cartels become private energy lords, pulling clean power off the public grid.\n4️⃣ The Hidden Cost: Fossil fuel plants stay open longer to replace the lost nuclear baseline.\n\nShould tech giants be allowed to buy up public power sources for private AI models?\n\nSave this post to sharpen your global systems lens.\n\n#ArtificialIntelligence #EnergyCrisis #NuclearPower #BigTech #GlobalEconomy",
+    "cdnUrls": [
+      "https://iili.io/nmOaIOF.png",
+      "https://iili.io/nmOaAxa.png",
+      "https://iili.io/nmOaRWJ.png",
+      "https://iili.io/nmOacUN.png",
+      "https://iili.io/nmOaVxs.png"
+    ],
+    "timestamp": "2026-11-10T20:11:16.699Z",
+    "isNews": true,
+    "autopilot": true
   }
 }
