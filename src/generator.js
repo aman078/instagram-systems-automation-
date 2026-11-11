@@ -150,25 +150,58 @@ export async function generateCarouselData(customTopic = null) {
   ];
 
   // Load master topics catalog & history
-  const topicsPath = path.join(__dirname, 'topics.json');
   const historyPath = path.join(__dirname, '..', 'history.json');
-  
-  let allTopics = [];
-  try { allTopics = JSON.parse(fs.readFileSync(topicsPath, 'utf8')); } catch(e) {}
   
   let history = [];
   try { history = JSON.parse(fs.readFileSync(historyPath, 'utf8')); } catch(e) {}
 
   let chosenTopic = customTopic;
+
+  // If no custom topic provided, dynamically brainstorm a 100% fresh concept with Gemini
+  // strictly excluding anything ever posted in history.json
   if (!chosenTopic) {
-    const unposted = allTopics.filter(t => !history.some(h => t.toLowerCase().includes(h.toLowerCase().slice(0, 8))));
-    if (unposted.length > 0) {
-      chosenTopic = unposted[Math.floor(Math.random() * unposted.length)];
-    } else {
-      chosenTopic = allTopics[Math.floor(Math.random() * allTopics.length)];
+    console.log(`🧠 Discovering brand-new, never-before-seen systems concept with Gemini (avoiding ${history.length} past topics)...`);
+    
+    const topicPrompt = `
+You are the intellectual curator for @systems.thinking.lab on Instagram.
+We explain deep mental models, hidden incentives, game theory traps, cognitive paradoxes, and thermodynamic principles of human systems in plain English.
+
+Here is the EXACT list of all topics we have ALREADY published:
+${history.map((h, i) => `${i + 1}. ${h}`).join('\n')}
+
+RULES FOR CHOOSING A TOPIC:
+1. STRICT DEDUPLICATION: You MUST NOT pick any topic listed above, nor any close synonym, variation, or duplicate of them.
+2. DISCOVER FRESH WISDOM: Pick a fascinating, high-insight mental model or human system trap from fields like:
+   - Behavioral Economics & Game Theory (e.g., Ergodicity, Principal-Agent Problem, Moloch / Race to the Bottom, The Lemons Problem, St. Petersburg Paradox, Dollar Auction, Comparative Advantage)
+   - Evolutionary Biology & Ecology (e.g., The Handicap Principle, Inclusive Fitness, Competitive Exclusion Principle, Trophic Cascades)
+   - Cybernetics & Systems Dynamics (e.g., Ashby's Law of Requisite Variety, Second-Order Cybernetics, Shifting the Burden, Limits to Growth, Feedback Loops)
+   - Organizational Traps & Human Paradoxes (e.g., Parkinson's Law of Triviality / Bikeshedding, Sayre's Law, Pournelle's Iron Law, The Dilbert Principle)
+   - Decision Theory & Cognitive Biases (e.g., Ellsberg Paradox, Decoy Effect, Focusing Illusion, Contrast Effect, Affect Heuristic)
+3. Return ONLY a single line in this exact format:
+   Name of Concept: Punchy 8-12 word subtitle explaining the paradox
+`;
+
+    for (const modelName of candidateModels) {
+      try {
+        const model = genAI.getGenerativeModel({ model: modelName });
+        const res = await model.generateContent(topicPrompt);
+        const suggested = res.response.text().trim().replace(/^["']|["']$/g, '');
+        if (suggested && suggested.length > 5) {
+          chosenTopic = suggested;
+          console.log(`💡 Gemini discovered unique fresh topic: "${chosenTopic}"`);
+          break;
+        }
+      } catch (err) {
+        console.log(`Topic discovery fallback on ${modelName}:`, err.message);
+      }
+    }
+
+    if (!chosenTopic) {
+      chosenTopic = "Ergodicity: Why an average outcome doesn't guarantee your personal survival";
     }
   }
 
+  // Record into history
   if (!history.includes(chosenTopic)) {
     history.push(chosenTopic);
     try { fs.writeFileSync(historyPath, JSON.stringify(history, null, 2), 'utf8'); } catch(e) {}

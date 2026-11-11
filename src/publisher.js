@@ -292,7 +292,14 @@ export class InstagramPublisher {
         break;
       }
       if (statusCode === 'ERROR') {
-        throw new Error(`Meta video processing failed: ${JSON.stringify(checkData)}`);
+        const errorMsg = JSON.stringify(checkData);
+        if (options.retryCount === undefined) options.retryCount = 0;
+        if (options.retryCount < 2) {
+          console.log(`⚠️ Meta transcode returned transient error (${statusCode}). Retrying with fresh upload in 8s (attempt ${options.retryCount + 1}/2)...`);
+          await new Promise(r => setTimeout(r, 8000));
+          return this.publishReel(videoTarget, caption, { ...options, retryCount: options.retryCount + 1, force: true });
+        }
+        throw new Error(`Meta video processing failed: ${errorMsg}`);
       }
       if (statusCode === 'EXPIRED') {
         throw new Error(`Meta reel container expired: ${JSON.stringify(checkData)}`);
