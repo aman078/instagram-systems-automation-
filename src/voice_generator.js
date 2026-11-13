@@ -54,3 +54,4 @@ export async function generateVoiceover(text, outputPath, voice = 'en-US-Christo
   console.log(`✅ [VoiceGenerator] Voiceover ready: ${outputPath} (${duration.toFixed(1)}s, ${fs.statSync(outputPath).size} bytes)`);
   return { path: outputPath, duration };
 }
+
