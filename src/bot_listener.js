@@ -325,11 +325,12 @@ async function main() {
 
         const files = await renderCarousel(carouselData, outputDir);
 
-        // Pre-compile 5.5s vertical looping Reel (1080x1920)
+        // Pre-compile Cinematic Reel with Neural Voiceover
         try {
-          await buildReelFromSlides(outputDir, false);
+          await buildKineticReel(carouselData, outputDir);
         } catch (reelErr) {
-          console.warn('⚠️ Reel build note:', reelErr.message);
+          console.warn('⚠️ Kinetic Reel build note:', reelErr.message);
+          try { await buildReelFromSlides(outputDir, false); } catch(e) {}
         }
 
         const cdnUrls = [];
