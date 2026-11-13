@@ -40,7 +40,7 @@ export class TelegramNotifier {
   /**
    * Send carousel slides as an album (media group)
    */
-  async sendCarouselPreview(imageFilePaths, captionText, topic, folderName = '', cdnUrls = []) {
+  async sendCarouselPreview(imageFilePaths, captionText, topic, folderName = '', cdnUrls = [], isPublished = false, postId = null) {
     if (!this.isConfigured()) {
       console.log('Telegram not configured. Preview simulated.');
       return { simulated: true };
@@ -65,7 +65,9 @@ export class TelegramNotifier {
       };
 
       if (i === 0) {
-        mediaItem.caption = `📐 NEW DRAFT: ${topic}`;
+        mediaItem.caption = isPublished 
+          ? `🎉 LIVE ON INSTAGRAM: ${topic}\n(New Kinetic Video posted to Reels feed. Here are your readable slides below)` 
+          : `📐 NEW DRAFT: ${topic}`;
       }
 
       mediaArray.push(mediaItem);
@@ -85,13 +87,29 @@ export class TelegramNotifier {
     }
 
     const cleanCaption = (captionText || '').slice(0, 1000);
+
+    if (isPublished) {
+      const liveMsg = `🎉 <b>REEL IS LIVE ON INSTAGRAM!</b>\n\n📌 <b>Topic:</b> ${topic}\n🆔 <b>Post ID:</b> ${postId || 'Published'}\n🔗 <b>Instagram:</b> @systems.thinking.lab\n\n📝 <b>Live Caption:</b>\n\n${cleanCaption}\n\n✨ <i>Slides delivered above for your personal reading.</i>`;
+      await fetch(`${this.apiUrl}/sendMessage`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          chat_id: this.chatId,
+          text: liveMsg,
+          parse_mode: 'HTML'
+        })
+      });
+      console.log(`✅ Telegram live post notification with slides dispatched!`);
+      return { success: true };
+    }
+
     const captionMsg = `Post Caption & Hashtags:\n\n${cleanCaption}\n\nReview complete. Click an option below:`;
 
     const isNews = folderName.startsWith('news_');
     const keyboard = {
       inline_keyboard: [
         [
-          { text: '🎬 Post as Reel (Viral Reach)', callback_data: `reel_${folderName || 'draft'}` },
+          { text: '🚀 Publish Reel to Instagram', callback_data: `reel_${folderName || 'draft'}` },
           { text: '📑 Post Carousel', callback_data: `approve_${folderName || 'draft'}` }
         ],
         [

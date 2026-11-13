@@ -312,9 +312,10 @@ async function main() {
         await telegram.sendMessage(`❌ Error generating news breakdown: ${err.message}`);
       }
     }
-    // 6a. Reel Command /reel -> Generates Cinematic Documentary Reel with Voiceover & sends video to Telegram
-    else if (action === 'cmd_reel' || action === 'reel_command') {
-      await telegram.sendMessage('🎬 Brainstorming a fresh systems concept & compiling Cinematic Documentary Reel (1080x1920 with neural voiceover)...');
+    // 6. Systems Thinking Generation (/reel, /generate, regenerate)
+    else if (action === 'regenerate' || action === 'cmd_generate' || action === 'generate_command' || action === 'cmd_reel' || action === 'reel_command') {
+      const autopilot = getAutopilotState();
+      await telegram.sendMessage(`🧠 Brainstorming fresh concept with Gemini, compiling readable slides & rendering Kinetic Reel...\n\n🤖 Autopilot: ${autopilot ? '🟢 ON (Direct Auto-Publishing to Instagram)' : '🔴 OFF (Manual Approval)'}`);
 
       try {
         const carouselData = await generateCarouselData();
@@ -327,35 +328,16 @@ async function main() {
         // Save caption
         fs.writeFileSync(path.join(outputDir, 'caption.txt'), carouselData.caption, 'utf8');
 
-        // Render high-impact Kinetic Reel with Christopher voiceover
-        const reelPath = await buildKineticReel(carouselData, outputDir);
-
-        // Send video directly to Telegram!
-        await telegram.sendReelPreview(reelPath, carouselData.caption, carouselData.topic, manifestKey);
-      } catch (err) {
-        console.error('Reel generation error:', err);
-        await telegram.sendMessage(`❌ Error generating Reel: ${err.message}`);
-      }
-    }
-    // 6b. Classic Systems Thinking Carousel /generate
-    else if (action === 'regenerate' || action === 'cmd_generate' || action === 'generate_command') {
-      await telegram.sendMessage('🎨 Brainstorming fresh concept and rendering 5-slide visual carousel...');
-
-      try {
-        const carouselData = await generateCarouselData();
-        const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
-        const safeTitle = carouselData.topic.toLowerCase().replace(/[^a-z0-9]+/g, '-').slice(0, 30);
-        const manifestKey = `${timestamp}_${safeTitle}`;
-        const outputDir = path.join(__dirname, '..', 'output', manifestKey);
-
+        // 1. Render readable carousel slides for Telegram
         const files = await renderCarousel(carouselData, outputDir);
 
-        // Pre-compile Cinematic Reel with Neural Voiceover
+        // 2. Render Kinetic Reel for Instagram
+        let reelPath = null;
         try {
-          await buildKineticReel(carouselData, outputDir);
+          reelPath = await buildKineticReel(carouselData, outputDir);
         } catch (reelErr) {
           console.warn('⚠️ Kinetic Reel build note:', reelErr.message);
-          try { await buildReelFromSlides(outputDir, false); } catch(e) {}
+          try { reelPath = await buildReelFromSlides(outputDir, false); } catch(e) {}
         }
 
         const cdnUrls = [];
@@ -373,38 +355,35 @@ async function main() {
           topic: carouselData.topic,
           caption: carouselData.caption,
           cdnUrls: cdnUrls,
-          timestamp: new Date().toISOString()
+          timestamp: new Date().toISOString(),
+          autopilot: autopilot
         };
         fs.mkdirSync(path.dirname(cloudStagingPath), { recursive: true });
         fs.writeFileSync(cloudStagingPath, JSON.stringify(db, null, 2), 'utf8');
 
-        await telegram.sendCarouselPreview(files, carouselData.caption, carouselData.topic, manifestKey, cdnUrls);
+        // 3. If Autopilot is ON, auto-publish Reel directly to Instagram!
+        if (autopilot && reelPath && fs.existsSync(reelPath)) {
+          await telegram.sendMessage('🚀 Autopilot Active: Uploading Kinetic Reel directly to Instagram reels feed...');
+          const result = await publisher.publishReel(reelPath, carouselData.caption);
 
-        const keyboard = {
-          inline_keyboard: [
-            [
-              { text: '🎬 Post as Reel (Viral Reach)', callback_data: `reel_${manifestKey}` },
-              { text: '📑 Post Carousel', callback_data: `approve_${manifestKey}` }
-            ],
-            [
-              { text: '🔄 Regenerate', callback_data: 'regenerate' },
-              { text: '🗑️ Discard Draft', callback_data: 'discard' }
-            ]
-          ]
-        };
+          // Sync git in background
+          try {
+            const repoDir = path.join(__dirname, '..');
+            execSync(`git add -f "output/${manifestKey}/reel.mp4"`, { cwd: repoDir });
+            execSync(`git commit -m "feat: staged reel for ${manifestKey} [skip ci]"`, { cwd: repoDir });
+            execSync(`git push origin main`, { cwd: repoDir });
+          } catch (e) {}
 
-        await fetch(`https://api.telegram.org/bot${process.env.TELEGRAM_BOT_TOKEN}/sendMessage`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            chat_id: process.env.TELEGRAM_CHAT_ID,
-            text: `⚡ Action Required: Click below to publish [${carouselData.topic}] to Instagram:`,
-            reply_markup: keyboard
-          })
-        });
+          // Deliver readable slides to Telegram with LIVE confirmation
+          await telegram.sendCarouselPreview(files, carouselData.caption, carouselData.topic, manifestKey, cdnUrls, true, result.postId);
+          console.log(`✅ Autopilot successfully published Reel and pushed readable slides to Telegram!`);
+        } else {
+          // Deliver readable slides to Telegram with 1-click publish buttons
+          await telegram.sendCarouselPreview(files, carouselData.caption, carouselData.topic, manifestKey, cdnUrls, false);
+        }
       } catch (err) {
-        console.error('Regenerate error:', err);
-        await telegram.sendMessage(`❌ Error generating new carousel: ${err.message}`);
+        console.error('Generation error:', err);
+        await telegram.sendMessage(`❌ Error during generation: ${err.message}`);
       }
     } else if (action === 'discard') {
       await telegram.sendMessage('🗑️ Draft discarded. No action taken.');

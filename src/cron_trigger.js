@@ -102,18 +102,8 @@ async function runScheduledPost() {
         if (result.success) {
           console.log(`🎉 Autopilot successfully published REEL to Instagram! Post ID: ${result.postId}`);
 
-          // Send preview album to Telegram so Aman sees what was posted
-          await telegram.sendCarouselPreview(files, carouselData.caption, carouselData.topic, manifestKey, cdnUrls);
-
-          // Send confirmation notice
-          await fetch(`https://api.telegram.org/bot${process.env.TELEGRAM_BOT_TOKEN}/sendMessage`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              chat_id: process.env.TELEGRAM_CHAT_ID,
-              text: `🎉 [AUTOPILOT LIVE] 🎬 Viral Reel is LIVE on Instagram!\n\n📌 Topic: ${carouselData.topic}\n🆔 Post ID: ${result.postId}\n🔗 Handle: @systems.thinking.lab\n\n(Autopilot mode is ON: 5.5s looping Reel was generated and published automatically from GitHub Actions cloud).`
-            })
-          });
+          // Send readable carousel slides to Telegram so Aman can easily read
+          await telegram.sendCarouselPreview(files, carouselData.caption, carouselData.topic, manifestKey, cdnUrls, true, result.postId);
 
           console.log('✅ Autopilot execution complete!\n');
           return;
