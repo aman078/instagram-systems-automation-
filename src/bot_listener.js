@@ -172,12 +172,12 @@ async function main() {
       const outputDir = path.join(__dirname, '..', 'output', folderName);
       const isNews = folderName.startsWith('news_');
 
-      await telegram.sendMessage(`🎬 Preparing 5.5s viral looping Reel for: ${folderName}...`);
+      await telegram.sendMessage(`🎬 Publishing Cinematic Reel to Instagram for: ${folderName}...`);
 
       try {
         const reelPath = path.join(outputDir, 'reel.mp4');
         if (!fs.existsSync(reelPath)) {
-          await telegram.sendMessage('⚙️ Compiling 1080x1920 MP4 with Ken Burns zoom, faststart & stereo synth...');
+          await telegram.sendMessage('⚙️ Compiling Reel with voiceover and audiobed...');
           await buildReelFromSlides(outputDir, isNews);
         }
 
@@ -312,9 +312,34 @@ async function main() {
         await telegram.sendMessage(`❌ Error generating news breakdown: ${err.message}`);
       }
     }
-    // 6. Classic Systems Thinking Command /generate or /reel
-    else if (action === 'regenerate' || action === 'cmd_generate' || action === 'generate_command' || action === 'cmd_reel' || action === 'reel_command') {
-      await telegram.sendMessage('🔄 Cooking a fresh topic with Gemini and compiling both slides & 5.5s Reel...');
+    // 6a. Reel Command /reel -> Generates Cinematic Documentary Reel with Voiceover & sends video to Telegram
+    else if (action === 'cmd_reel' || action === 'reel_command') {
+      await telegram.sendMessage('🎬 Brainstorming a fresh systems concept & compiling Cinematic Documentary Reel (1080x1920 with neural voiceover)...');
+
+      try {
+        const carouselData = await generateCarouselData();
+        const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
+        const safeTitle = carouselData.topic.toLowerCase().replace(/[^a-z0-9]+/g, '-').slice(0, 30);
+        const manifestKey = `${timestamp}_${safeTitle}`;
+        const outputDir = path.join(__dirname, '..', 'output', manifestKey);
+        fs.mkdirSync(outputDir, { recursive: true });
+
+        // Save caption
+        fs.writeFileSync(path.join(outputDir, 'caption.txt'), carouselData.caption, 'utf8');
+
+        // Render high-impact Kinetic Reel with Christopher voiceover
+        const reelPath = await buildKineticReel(carouselData, outputDir);
+
+        // Send video directly to Telegram!
+        await telegram.sendReelPreview(reelPath, carouselData.caption, carouselData.topic, manifestKey);
+      } catch (err) {
+        console.error('Reel generation error:', err);
+        await telegram.sendMessage(`❌ Error generating Reel: ${err.message}`);
+      }
+    }
+    // 6b. Classic Systems Thinking Carousel /generate
+    else if (action === 'regenerate' || action === 'cmd_generate' || action === 'generate_command') {
+      await telegram.sendMessage('🎨 Brainstorming fresh concept and rendering 5-slide visual carousel...');
 
       try {
         const carouselData = await generateCarouselData();

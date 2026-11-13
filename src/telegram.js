@@ -116,6 +116,66 @@ export class TelegramNotifier {
   }
 
   /**
+   * Send compiled video Reel directly to Telegram for instant playback
+   */
+  async sendReelPreview(videoPath, captionText, topic, folderName = '') {
+    if (!this.isConfigured()) {
+      console.log('Telegram not configured. Video preview simulated.');
+      return { simulated: true };
+    }
+
+    console.log(`🎬 Pushing cinematic Reel video preview to Telegram...`);
+
+    const formData = new FormData();
+    const fileBytes = fs.readFileSync(videoPath);
+    const blob = new Blob([fileBytes], { type: 'video/mp4' });
+
+    formData.append('video', blob, 'reel.mp4');
+    formData.append('chat_id', this.chatId);
+    formData.append('caption', `🎬 <b>NEW CINEMATIC REEL PREVIEW</b>\n\n📌 <b>Topic:</b> ${topic}\n🎙️ <i>Narrated by Christopher (Neural Voice) + Sub-bass Ambient Bed</i>\n📐 <i>1080x1920 Vertical Full-Screen Canvas</i>\n\nTap play above to preview the video and voiceover.`);
+    formData.append('parse_mode', 'HTML');
+
+    const videoRes = await fetch(`${this.apiUrl}/sendVideo`, {
+      method: 'POST',
+      body: formData
+    });
+
+    const videoData = await videoRes.json();
+    if (!videoData.ok) {
+      console.warn(`Failed to send Telegram video directly: ${JSON.stringify(videoData)}. Falling back to link/message.`);
+    }
+
+    const cleanCaption = (captionText || '').slice(0, 1000);
+    const captionMsg = `📝 <b>Instagram Caption & Hashtags:</b>\n\n${cleanCaption}\n\nReady to publish to @systems.thinking.lab?`;
+
+    const keyboard = {
+      inline_keyboard: [
+        [
+          { text: '🚀 Publish Reel to Instagram', callback_data: `reel_${folderName || 'draft'}` }
+        ],
+        [
+          { text: '🔄 Regenerate Another Concept', callback_data: 'cmd_reel' },
+          { text: '🗑️ Discard Draft', callback_data: 'discard' }
+        ]
+      ]
+    };
+
+    await fetch(`${this.apiUrl}/sendMessage`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        chat_id: this.chatId,
+        text: captionMsg,
+        parse_mode: 'HTML',
+        reply_markup: keyboard
+      })
+    });
+
+    console.log(`✅ Telegram Reel preview notification dispatched successfully!`);
+    return { success: true };
+  }
+
+  /**
    * Start long-polling Telegram for button presses & commands
    */
   async startPolling(onAction) {
