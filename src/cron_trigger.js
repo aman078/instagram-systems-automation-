@@ -7,6 +7,7 @@ import { renderCarousel } from './renderer.js';
 import { TelegramNotifier } from './telegram.js';
 import { uploadToPublicCDN, InstagramPublisher } from './publisher.js';
 import { buildReelFromSlides } from './reel_renderer.js';
+import { buildKineticReel } from './kinetic_reel_renderer.js';
 
 dotenv.config();
 
@@ -56,11 +57,15 @@ async function runScheduledPost() {
     console.log(`🎨 Rendering slides to: ${outputDir}`);
     const files = await renderCarousel(carouselData, outputDir);
 
-    // 2b. Render 5.5-second vertical looping Reel (1080x1920) for Explore & Reels discovery
+    // 2b. Render High-Impact Cinematic Reel with Neural Voiceover & Full 1080x1920 Layout
     try {
-      await buildReelFromSlides(outputDir, false);
+      console.log('🎬 Rendering cinematic voiceover Reel...');
+      await buildKineticReel(carouselData, outputDir);
     } catch (reelErr) {
-      console.warn('⚠️ Reel generation skipped:', reelErr.message);
+      console.warn('⚠️ Kinetic Reel generation failed, falling back to classic:', reelErr.message);
+      try {
+        await buildReelFromSlides(outputDir, false);
+      } catch (e) {}
     }
 
     // 3. Stage slides immediately to public CDN

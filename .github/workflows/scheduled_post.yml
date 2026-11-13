@@ -34,6 +34,14 @@ jobs:
       - name: Install FFmpeg
         run: sudo apt-get update -qq && sudo apt-get install -y -qq ffmpeg
 
+      - name: Setup Python for Voiceover
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install Edge-TTS Neural Speech Engine
+        run: pip install edge-tts
+
       - name: Install Chrome dependencies for Puppeteer
         run: npx puppeteer browsers install chrome
 

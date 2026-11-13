@@ -10,6 +10,7 @@ import { renderCarousel } from './renderer.js';
 import { generateNewsCarouselData } from './news_generator.js';
 import { renderNewsCarousel } from './news_renderer.js';
 import { buildReelFromSlides } from './reel_renderer.js';
+import { buildKineticReel } from './kinetic_reel_renderer.js';
 import { generateCommentRadar, formatRadarTelegramMessage } from './comment_radar.js';
 
 dotenv.config();
