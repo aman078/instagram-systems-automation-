@@ -29,13 +29,31 @@ export async function generateVoiceover(text, outputPath, voice = 'en-US-Christo
   // Escape quotes for command line
   const escapedText = cleanText.replace(/"/g, '\\"');
 
-  const cmd = `python -m edge_tts --voice ${voice} --text "${escapedText}" --write-media "${outputPath}"`;
-  
-  console.log(`🎙️ [VoiceGenerator] Synthesizing voiceover (${voice})...`);
-  execSync(cmd, { stdio: 'pipe' });
+  const candidates = [
+    `edge-tts --voice ${voice} --text "${escapedText}" --write-media "${outputPath}"`,
+    `python3 -m edge_tts --voice ${voice} --text "${escapedText}" --write-media "${outputPath}"`,
+    `python -m edge_tts --voice ${voice} --text "${escapedText}" --write-media "${outputPath}"`,
+    `py -m edge_tts --voice ${voice} --text "${escapedText}" --write-media "${outputPath}"`
+  ];
 
-  if (!fs.existsSync(outputPath) || fs.statSync(outputPath).size === 0) {
-    throw new Error(`Voiceover synthesis failed. File is missing or empty at ${outputPath}`);
+  console.log(`🎙️ [VoiceGenerator] Synthesizing voiceover (${voice})...`);
+  let success = false;
+  let lastErr = null;
+
+  for (const cmd of candidates) {
+    try {
+      execSync(cmd, { stdio: 'pipe' });
+      if (fs.existsSync(outputPath) && fs.statSync(outputPath).size > 0) {
+        success = true;
+        break;
+      }
+    } catch (e) {
+      lastErr = e;
+    }
+  }
+
+  if (!success) {
+    throw new Error(`Voiceover synthesis failed across all python/edge-tts paths: ${lastErr?.message}`);
   }
 
   // Get duration using ffprobe

@@ -332,13 +332,7 @@ async function main() {
         const files = await renderCarousel(carouselData, outputDir);
 
         // 2. Render Kinetic Reel for Instagram
-        let reelPath = null;
-        try {
-          reelPath = await buildKineticReel(carouselData, outputDir);
-        } catch (reelErr) {
-          console.warn('⚠️ Kinetic Reel build note:', reelErr.message);
-          try { reelPath = await buildReelFromSlides(outputDir, false); } catch(e) {}
-        }
+        const reelPath = await buildKineticReel(carouselData, outputDir);
 
         const cdnUrls = [];
         for (const f of files) {

@@ -58,15 +58,8 @@ async function runScheduledPost() {
     const files = await renderCarousel(carouselData, outputDir);
 
     // 2b. Render High-Impact Cinematic Reel with Neural Voiceover & Full 1080x1920 Layout
-    try {
-      console.log('🎬 Rendering cinematic voiceover Reel...');
-      await buildKineticReel(carouselData, outputDir);
-    } catch (reelErr) {
-      console.warn('⚠️ Kinetic Reel generation failed, falling back to classic:', reelErr.message);
-      try {
-        await buildReelFromSlides(outputDir, false);
-      } catch (e) {}
-    }
+    console.log('🎬 Rendering cinematic voiceover Reel (1080x1920)...');
+    await buildKineticReel(carouselData, outputDir);
 
     // 3. Stage slides immediately to public CDN
     console.log('☁️ Staging slides to CDN...');
@@ -169,4 +162,13 @@ async function runScheduledPost() {
   }
 }
 
-runScheduledPost();
+// Only execute when invoked directly as a script (e.g., node src/cron_trigger.js),
+// NEVER when imported by other modules (such as daily_news_trigger.js)
+const isMainModule = process.argv[1] && (
+  process.argv[1].endsWith('cron_trigger.js') ||
+  fileURLToPath(import.meta.url) === path.resolve(process.argv[1])
+);
+
+if (isMainModule) {
+  runScheduledPost();
+}
