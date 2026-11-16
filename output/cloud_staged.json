@@ -145,5 +145,19 @@
     ],
     "timestamp": "2026-11-16T10:41:08.521Z",
     "autopilot": true
+  },
+  "news_2026-11-16T22-48-01_ai-data-center-water-consumpti": {
+    "topic": "AI Data Center Water Consumption",
+    "caption": "Ever wonder where the water goes during a summer drought? Part of it might be cooling the servers answering your AI prompts.\n\nHere is how code turns into a physical resource crisis:\n• The Event: AI data centers burn through millions of gallons of fresh water daily for cooling towers.\n• The First Order: Tech giants buy up local water rights, outbidding agricultural producers.\n• The Micro Impact: Household water rates jump and local water restrictions tighten in computing hubs.\n• The Macro Shockwave: Global AI expansion hits a physical wall, driving real estate booms in chilly, water-rich nations.\n\nShould tech giants be forced to build closed-loop ocean cooling systems, even if it doubles computing costs?\n\nSave this post to sharpen your global systems lens.",
+    "cdnUrls": [
+      "https://iili.io/odiF5H7.png",
+      "https://iili.io/odiFYNe.png",
+      "https://iili.io/odiFaDu.png",
+      "https://iili.io/odiF0Vj.png",
+      "https://iili.io/odiFGKQ.png"
+    ],
+    "timestamp": "2026-11-16T22:48:17.108Z",
+    "isNews": true,
+    "autopilot": true
   }
 }
