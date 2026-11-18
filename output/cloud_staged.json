@@ -159,5 +159,18 @@
     "timestamp": "2026-11-16T22:48:17.108Z",
     "isNews": true,
     "autopilot": true
+  },
+  "2026-11-18T11-13-32_the-lemons-problem": {
+    "topic": "The Lemons Problem",
+    "caption": "Ever wonder why so many online markets slowly turn into flea markets of junk?\n\nEconomist George Akerlof won a Nobel Prize for uncovering the reason: 'The Lemons Problem.'\n\n• When buyers cannot spot quality, they pay a middle price to stay safe.\n• Owners of great products refuse to sell cheap and pack up.\n• That leaves only lemons on the lot, dragging prices down further.\n• Soon, the entire market collapses into low-trust garbage.\n\nWhat is one purchase you made that turned out to be a total lemon?\n\nSave this post for later.\n\n#LemonsProblem #AsymmetricInformation #SystemsThinking #GameTheory #MentalModels",
+    "cdnUrls": [
+      "https://iili.io/o37vkYP.png",
+      "https://iili.io/o37vrZJ.png",
+      "https://iili.io/o37vi4p.png",
+      "https://iili.io/o37vZvt.png",
+      "https://iili.io/o37vmjs.png"
+    ],
+    "timestamp": "2026-11-18T11:13:53.123Z",
+    "autopilot": true
   }
 }
