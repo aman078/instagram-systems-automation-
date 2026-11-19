@@ -186,5 +186,19 @@
     "timestamp": "2026-11-18T21:04:46.729Z",
     "isNews": true,
     "autopilot": true
+  },
+  "news_2026-11-19T21-08-24_russian-enriched-uranium-depen": {
+    "topic": "Russian Enriched Uranium Dependency",
+    "caption": "Why your next electricity bill is secretly tied to Russian state monopoly.\n\n• Russia controls 40% of global uranium enrichment, the crucial step for nuclear power.\n• Western sanctions spared nuclear fuel initially to avoid immediate grid blackouts.\n• Rushing to build local enrichment plants creates massive short-term supply scarcity.\n• Utility companies pass these rising fuel replacement costs straight to your monthly bill.\n\nCan the West successfully decouple its green energy grid from geopolitical rivals before costs spiral out of control?\n\nSave this post to sharpen your global systems lens.\n\n#NuclearEnergy #Uranium #SupplyChain #Geopolitics #GlobalEconomy",
+    "cdnUrls": [
+      "https://iili.io/oFAZjbn.png",
+      "https://iili.io/oFAZOWG.png",
+      "https://iili.io/oFAZvf4.png",
+      "https://iili.io/oFAZ6be.png",
+      "https://iili.io/oFAZDgV.png"
+    ],
+    "timestamp": "2026-11-19T21:08:40.785Z",
+    "isNews": true,
+    "autopilot": true
   }
 }
