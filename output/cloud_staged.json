@@ -213,5 +213,19 @@
     ],
     "timestamp": "2026-11-20T10:57:05.910Z",
     "autopilot": true
+  },
+  "news_2026-11-20T20-53-33_the-commercial-spaceflight-deb": {
+    "topic": "The Commercial Spaceflight Debris Problem",
+    "caption": "Your GPS, your weather app, and your favorite broadband are one fender-bender away from total blackout. \n\n• 36,000+ pieces of high-speed space junk now clog Earth's orbital highway.\n• Satellite operators are burning record fuel dodging debris, driving up tech insurance costs.\n• Higher insurance and shorter satellite lifespans directly inflate your monthly consumer tech bills.\n• If a major cascade (Kessler Syndrome) hits, global GPS and financial syncing go dark.\n\nAre private space companies moving too fast without cleanup regulations? \n\nSave this post to sharpen your global systems lens.\n\n#SpaceEconomy #KesslerSyndrome #SupplyChain #GlobalGeopolitics #TechInfrastructure",
+    "cdnUrls": [
+      "https://iili.io/oFP36ba.png",
+      "https://iili.io/oFP3izJ.png",
+      "https://iili.io/oFP3sWv.png",
+      "https://iili.io/oFP3LsR.png",
+      "https://iili.io/oFP3Zfp.png"
+    ],
+    "timestamp": "2026-11-20T20:53:51.098Z",
+    "isNews": true,
+    "autopilot": true
   }
 }
