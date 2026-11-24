@@ -282,5 +282,19 @@
     "timestamp": "2026-11-24T00:33:03.773Z",
     "isNews": true,
     "autopilot": true
+  },
+  "news_2026-11-24T22-53-18_the-autonomous-drone-freight-s": {
+    "topic": "The Autonomous Drone Freight Shift",
+    "caption": "A $500 drone is currently beating a billion-dollar warship—and your wallet is paying the difference. \n\n• Cheap drones disrupt regional chokepoints and maritime security.\n• Insurance underwriters spike cargo premiums to cover the new risk.\n• Shipping companies pass these soaring security costs directly to consumers.\n• Global defense budgets radically pivot from massive carriers to automated swarms.\n\nHow should global trade lanes protect themselves when defense becomes financially unsustainable?\n\nSave this post to sharpen your global systems lens.\n\n#SupplyChain #DefenseTech #Geopolitics #GlobalEconomy #AutonomousDrones",
+    "cdnUrls": [
+      "https://iili.io/ofNmGwu.png",
+      "https://iili.io/ofNmMZb.png",
+      "https://iili.io/ofNmO8P.png",
+      "https://iili.io/ofNmvAF.png",
+      "https://iili.io/ofNm8wg.png"
+    ],
+    "timestamp": "2026-11-24T22:53:33.725Z",
+    "isNews": true,
+    "autopilot": true
   }
 }
