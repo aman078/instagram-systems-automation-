@@ -323,5 +323,19 @@
     "timestamp": "2026-11-25T22:10:45.481Z",
     "isNews": true,
     "autopilot": true
+  },
+  "news_2026-11-26T22-04-40_the-microchip-patent-web-dutch": {
+    "topic": "The Microchip Patent Web: Dutch Lithography Machine Export Bans",
+    "caption": "One machine in Europe is redrawing the map of global power.\n\n• The Dutch government blocks advanced ASML lithography exports to China under intense security pressure.\n• Global chipmakers scramble to build redundant, hyper-expensive supply chains across the US and Europe.\n• R&D capital floods into parallel tech ecosystems, splitting the global internet in two.\n• Consumer electronics and cars absorb the hidden tax of technological fragmentation.\n\nAre we entering a golden age of domestic innovation, or an era of permanent tech inflation?\n\nSave this post to sharpen your global systems lens.\n\n#Semiconductors #TechGeopolitics #SupplyChain #GlobalEconomy #ASML",
+    "cdnUrls": [
+      "https://iili.io/oqWTGzF.png",
+      "https://iili.io/oqWTVsa.png",
+      "https://iili.io/oqWTjgR.png",
+      "https://iili.io/oqWTNJp.png",
+      "https://iili.io/oqWTO5N.png"
+    ],
+    "timestamp": "2026-11-26T22:04:57.163Z",
+    "isNews": true,
+    "autopilot": true
   }
 }
